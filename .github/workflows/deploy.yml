@@ -24,7 +24,7 @@ env:
   ECR_REPOSITORY: acupressure-backend
   AWS_ROLE_ARN: arn:aws:iam::174135522344:role/acupressure-github-deploy
   EC2_INSTANCE_ID: i-0863178360ec9127e
-  APP_DOMAIN: ""   # the subdomain, e.g. acupressure.example.com
+  APP_DOMAIN: app.therevivecentre.com
 
 jobs:
   test:
