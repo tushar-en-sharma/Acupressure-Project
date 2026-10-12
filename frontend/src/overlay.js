@@ -1,64 +1,54 @@
-// Ports backend/detector/camera.py's old draw_overlay() (removed now that
-// the backend no longer has a video frame to draw on) — lean overlay of
-// just the active acupressure points, drawn on a <canvas> in front of the
-// live video.
-//
-// The video element is mirrored with a CSS transform for the "selfie" look
-// (see index.css), but this canvas isn't — mirroring it the same way would
-// also flip point labels backwards. Instead we mirror the x-coordinate here
-// so circles land in the right place while text stays readable.
+import { pointName } from "./pointName";
 
-export function drawOverlay(ctx, width, height, activePoints) {
+// Draws the selected problem's points on a <canvas> in front of the live
+// video. The video is mirrored with CSS for the "selfie" look; this canvas
+// isn't (mirroring it would flip the labels backwards), so x is mirrored here
+// instead and the circles land on the right spot with readable text.
+// Sizes scale with the frame so they stay legible on small phone screens.
+
+export function drawOverlay(ctx, width, height, points) {
   ctx.clearRect(0, 0, width, height);
+  if (!points.length) return;
 
-  if (!activePoints.length) return;
-
-  ctx.font = "600 15px system-ui, sans-serif";
+  const u = Math.max(width, height) / 640; // 1 at 640px capture size
+  const pulse = 1 + 0.25 * Math.sin(performance.now() / 180);
   ctx.textBaseline = "middle";
+  ctx.font = `700 ${Math.round(16 * u)}px system-ui, sans-serif`;
 
-  for (const point of activePoints) {
+  for (const point of points) {
     const [nx, ny] = point.coord;
     const cx = (1 - nx) * width;
     const cy = ny * height;
     const color = point.color;
 
     ctx.beginPath();
-    ctx.arc(cx, cy, 9, 0, Math.PI * 2);
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
+    ctx.arc(cx, cy, 20 * u * pulse, 0, Math.PI * 2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3 * u;
+    ctx.globalAlpha = 0.7;
     ctx.stroke();
+    ctx.globalAlpha = 1;
 
     ctx.beginPath();
-    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 10 * u, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
-
-    const label = point.label;
-    const textWidth = ctx.measureText(label).width;
-    const lx = cx - textWidth / 2;
-    const ly = cy - 22;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 12);
-    ctx.lineTo(cx, ly + 4);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 3 * u;
+    ctx.strokeStyle = "#ffffff";
     ctx.stroke();
 
-    ctx.fillStyle = "rgba(20, 20, 20, 0.65)";
-    ctx.fillRect(lx - 6, ly - 12, textWidth + 12, 22);
-
-    ctx.fillStyle = color;
-    ctx.fillText(label, lx, ly);
+    const label = pointName(point.label);
+    const tw = ctx.measureText(label).width;
+    const pad = 8 * u;
+    const lh = 28 * u;
+    let lx = cx - tw / 2 - pad;
+    lx = Math.min(Math.max(lx, 4), width - tw - 2 * pad - 4);
+    const ly = cy - 30 * u - lh;
+    ctx.fillStyle = "rgba(15, 23, 42, 0.8)";
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, tw + 2 * pad, lh, 8 * u);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(label, lx + pad, ly + lh / 2);
   }
-}
-
-export function drawPlaceholderMessage(ctx, width, height, message) {
-  ctx.clearRect(0, 0, width, height);
-  ctx.font = "600 16px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgba(215, 215, 215, 0.9)";
-  ctx.fillText(message, width / 2, height / 2);
-  ctx.textAlign = "left";
 }

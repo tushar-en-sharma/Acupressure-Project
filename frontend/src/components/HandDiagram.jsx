@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { pointName } from "../pointName";
 
 // Draws a problem's solution sheet — left hand (back, palm) and right hand
 // (back, palm), the same layout as the original hand-drawn reference sheets —
@@ -11,9 +12,9 @@ import { forwardRef } from "react";
 
 const PANEL_W = 300;
 const PANEL_H = 300;
-const TITLE_H = 46;
-const ROW_LABEL_H = 26;
-const LEGEND_ROW_H = 24;
+const TITLE_H = 54;
+const ROW_LABEL_H = 32;
+const LEGEND_ROW_H = 38;
 const PAD = 14;
 
 const SKIN = "#fbe7d6";
@@ -128,16 +129,16 @@ function HandPanel({ view, x, y, numberOf, color }) {
           const [cx, cy] = map(xy);
           return (
             <g key={label}>
-              <circle cx={cx} cy={cy} r="11" fill={color} stroke="#fff" strokeWidth="2.5" />
-              <circle cx={cx} cy={cy} r="13.5" fill="none" stroke={color} strokeWidth="1.5" />
-              <text x={cx} y={cy + 4} textAnchor="middle" fontSize="12" fontWeight="800" fill="#fff">
+              <circle cx={cx} cy={cy} r="14" fill={color} stroke="#fff" strokeWidth="3" />
+              <circle cx={cx} cy={cy} r="17" fill="none" stroke={color} strokeWidth="2" />
+              <text x={cx} y={cy + 5.5} textAnchor="middle" fontSize="16" fontWeight="800" fill="#fff">
                 {numberOf.get(label)}
               </text>
             </g>
           );
         })}
       </g>
-      <text x={PANEL_W / 2} y={PANEL_H - 2} textAnchor="middle" fontSize="12"
+      <text x={PANEL_W / 2} y={PANEL_H - 2} textAnchor="middle" fontSize="16"
         fontWeight="700" fill={faded ? MUTED : INK} letterSpacing="0.06em">
         {view.face === "palm" ? "PALM" : "BACK"}
       </text>
@@ -173,7 +174,7 @@ const HandDiagram = forwardRef(function HandDiagram({ views, problem }, ref) {
       className="hand-diagram" role="img" fontFamily={font}
       aria-label={`Where to press for ${problem.title || problem.name}`}>
       <rect width={width} height={height} fill="#ffffff" />
-      <text x={width / 2} y={30} textAnchor="middle" fontSize="19" fontWeight="800" fill={INK}>
+      <text x={width / 2} y={36} textAnchor="middle" fontSize="26" fontWeight="800" fill={INK}>
         {problem.title || problem.name}
       </text>
 
@@ -183,7 +184,7 @@ const HandDiagram = forwardRef(function HandDiagram({ views, problem }, ref) {
         return (
           <g key={hand}>
             <line x1="16" x2={width - 16} y1={top + 4} y2={top + 4} stroke="#e3e8ee" />
-            <text x={width / 2} y={top + 20} textAnchor="middle" fontSize="13"
+            <text x={width / 2} y={top + 24} textAnchor="middle" fontSize="17"
               fontWeight="800" fill={INK} letterSpacing="0.12em">
               {hand.toUpperCase()} HAND
             </text>
@@ -197,14 +198,14 @@ const HandDiagram = forwardRef(function HandDiagram({ views, problem }, ref) {
 
       {legend.map((label, i) => {
         const lx = 28 + (i % 2) * (width / 2);
-        const ly = legendTop + Math.floor(i / 2) * LEGEND_ROW_H + 12;
+        const ly = legendTop + Math.floor(i / 2) * LEGEND_ROW_H + 16;
         return (
           <g key={label}>
-            <circle cx={lx} cy={ly} r="9" fill={problem.color} />
-            <text x={lx} y={ly + 4} textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff">
+            <circle cx={lx} cy={ly} r="13" fill={problem.color} />
+            <text x={lx} y={ly + 5.5} textAnchor="middle" fontSize="15" fontWeight="800" fill="#fff">
               {numberOf.get(label)}
             </text>
-            <text x={lx + 16} y={ly + 4.5} fontSize="13" fill={INK}>{label}</text>
+            <text x={lx + 22} y={ly + 7} fontSize="21" fontWeight="600" fill={INK}>{pointName(label)}</text>
           </g>
         );
       })}
