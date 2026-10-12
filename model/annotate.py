@@ -15,9 +15,9 @@ also the ONLY way to create ground truth for palm points 51-63, which the
 original 50-image dataset never had.
 
 Run:
-    python src/annotate.py                 # start / resume
-    python src/annotate.py --only-acu      # jump straight to the 7 acu-points
-    python src/annotate.py --start 200     # start at image #200
+    python model/annotate.py               # start / resume
+    python model/annotate.py --only-acu    # jump straight to the 7 acu-points
+    python model/annotate.py --start 200   # start at image #200
 
 Controls (also shown on-screen, toggle with 'h'):
     left-drag / click ....... move the selected point
@@ -46,19 +46,14 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageTk
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import common as C
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from core import common as C
 
 # Point groups for colour-coding and locking
-BASE      = set(range(0, 21))                       # locked, from MediaPipe
-CUSTOM    = set(range(21, 51))                       # learned finger points
-PALM      = set(range(51, 64))                       # palm / acupressure support
-ACU_IDX   = {27, 32, 34, 37, 59, 62, 63}             # the 5 mapped conditions (both sides)
-
-ACU_LABEL = {
-    27: "Lu5 (R)", 32: "Lu5 (L)", 34: "BL60 (R)", 37: "BL60 (L)",
-    59: "GV1", 62: "CV8", 63: "CV4",
-}
+BASE      = set(range(0, C.N_MEDIAPIPE))             # locked, from MediaPipe
+CUSTOM    = set(C.FINGER_RANGE)                      # learned finger points
+PALM      = set(C.PALM_RANGE)                        # palm / acupressure support
+ACU_IDX, ACU_LABEL = C.acu_point_labels()            # the 5 mapped conditions (both sides)
 
 COL_BASE   = "#8a8a8a"
 COL_CUSTOM = "#22d3ee"
@@ -94,6 +89,7 @@ class Annotator:
         self.selected = 21
         self.show_help = True
         self.dragging = False
+        self.touched = set()       # point indices actually moved this image
 
         self._build_gui()
         self._load(self.idx)
@@ -120,6 +116,7 @@ class Annotator:
             return
         self.cv_img = img
         self.ih, self.iw = img.shape[:2]
+        self.touched = set()
 
         pts_21, side = C.mediapipe_21(img, self.hands)
         self.has_hand = pts_21 is not None
@@ -129,12 +126,16 @@ class Annotator:
 
         # Prefer saved annotation; else seed from model.
         rows = self.df[self.df["filename"] == fname]
-        if len(rows) >= 51:
+        if len(rows) >= C.FULL_ANNOTATION_ROWS:
             pts = np.zeros((C.N_TOTAL, 2), np.float32)
             for _, r in rows.iterrows():
                 j = int(r["point_index"])
                 if 0 <= j < C.N_TOTAL:
                     pts[j] = [r["x_norm"], r["y_norm"]]
+                    # legacy "custom" and current "human_verified" both mean
+                    # a person actually placed/corrected this point
+                    if j >= 21 and str(r.get("source", "")) in ("custom", "human_verified"):
+                        self.touched.add(j)
             # backfill any missing palm points from the model seed
             if self.has_hand and len(rows) < C.N_TOTAL:
                 seed = self._seed_points(pts_21)
@@ -159,7 +160,12 @@ class Annotator:
         self.df = self.df[self.df["filename"] != fname]
         rows = []
         for j in range(C.N_TOTAL):
-            src = "mediapipe" if j < 21 else "custom"
+            if j < 21:
+                src = "mediapipe"
+            elif j in self.touched:
+                src = "human_verified"      # actually placed/corrected by a person
+            else:
+                src = "model_seed"          # passed through untouched — not verified
             rows.append([fname, j, float(self.pts[j][0]), float(self.pts[j][1]), src])
         self.df = pd.concat(
             [self.df, pd.DataFrame(rows, columns=C.CSV_COLUMNS)], ignore_index=True)
@@ -335,6 +341,7 @@ class Annotator:
 
     def _move_selected(self, x, y):
         self.pts[self.selected] = self._c2n(x, y)
+        self.touched.add(self.selected)
         self._render()
 
     def _nudge(self, dx, dy):
@@ -343,6 +350,7 @@ class Annotator:
         s, dw, dh, ox, oy = self._geom
         self.pts[self.selected][0] = np.clip(self.pts[self.selected][0] + dx / dw, 0, 1)
         self.pts[self.selected][1] = np.clip(self.pts[self.selected][1] + dy / dh, 0, 1)
+        self.touched.add(self.selected)
         self._render()
 
     def _cycle(self, step):

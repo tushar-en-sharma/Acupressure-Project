@@ -1,7 +1,7 @@
 {
   "dataset": {
-    "gt_csv": "/Users/tusharsharma/Desktop/Accupressure Project/annotations/ground_truth_64pt.csv",
-    "image_dir": "/Users/tusharsharma/Desktop/Accupressure Project/dataset/Hands",
+    "gt_csv": "/Users/tusharsharma/Desktop/Acupressure-Project/annotations/ground_truth_64pt.csv",
+    "image_dir": "/Users/tusharsharma/Desktop/Acupressure-Project/dataset/Hands",
     "total_images": 50,
     "detected_images": 50,
     "skipped_images": 0,
@@ -66,11 +66,12 @@
     "mae_px": 29.890762329101562,
     "rmse_px": 55.196861267089844,
     "pck": {
+      "1%": 39.52941176470588,
       "2%": 62.86274509803922,
       "5%": 89.17647058823529,
       "10%": 97.45098039215686
     },
-    "fps": 53.620951541683446
+    "fps": 54.06105516437066
   },
   "per_point": {
     "0": {

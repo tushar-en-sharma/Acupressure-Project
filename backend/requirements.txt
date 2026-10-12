@@ -1,0 +1,8 @@
+# Local development: the CV/ML pipeline (core/, model/, simulation/) plus the
+# web backend. requirements-prod.txt is the slimmer set the Docker image uses.
+-r ../requirements.txt
+
+Django==6.1.2
+djangorestframework==3.18.3
+django-cors-headers==4.9.0
+whitenoise==6.12.0

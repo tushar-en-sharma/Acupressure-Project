@@ -1,0 +1,109 @@
+# Every push to main: run the tests, build one Docker image (React build +
+# Django API), push it to ECR, then roll it out on the EC2 instance over SSM.
+#
+# One-time setup: deploy/aws-setup.sh creates the AWS side (deploy role,
+# Elastic IP, ...). GitHub authenticates to AWS via OIDC — no stored keys.
+# While APP_DOMAIN is empty, the image is built and pushed but not rolled out.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: acupressure-backend
+  AWS_ROLE_ARN: arn:aws:iam::174135522344:role/acupressure-github-deploy
+  EC2_INSTANCE_ID: i-0863178360ec9127e
+  APP_DOMAIN: ""   # the subdomain, e.g. acupressure.example.com
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/requirements-prod.txt
+      - run: pip install -r backend/requirements-prod.txt pytest
+      # The annotation-tool tests need OpenCV/MediaPipe, which the deployed
+      # image doesn't ship — these cover everything the server actually runs.
+      - run: pytest -q tests/test_backend_api.py tests/test_common_unit.py tests/test_common_regression.py
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Roll out on EC2
+        if: env.APP_DOMAIN != ''
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          DOMAIN: ${{ env.APP_DOMAIN }}
+          INSTANCE_ID: ${{ env.EC2_INSTANCE_ID }}
+        run: |
+          SCRIPT="$(base64 -w0 deploy/remote-deploy.sh)"
+          CMD="echo $SCRIPT | base64 -d > /tmp/acupressure-deploy.sh && IMAGE='$IMAGE' DOMAIN='$DOMAIN' AWS_REGION='$AWS_REGION' bash /tmp/acupressure-deploy.sh"
+          CMD_ID="$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "deploy ${GITHUB_SHA::7}" \
+            --parameters "$(jq -cn --arg c "$CMD" '{commands: [$c], executionTimeout: ["900"]}')" \
+            --query Command.CommandId --output text)"
+          echo "SSM command: $CMD_ID"
+
+          # `aws ssm wait` gives up after ~100s; poll for up to 15 minutes instead.
+          for _ in $(seq 1 180); do
+            STATUS="$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)"
+            case "$STATUS" in Pending|InProgress|Delayed) sleep 5 ;; *) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query '[StandardOutputContent, StandardErrorContent]' --output text
+          echo "Status: $STATUS"
+          [ "$STATUS" = Success ]
+
+      - name: Smoke test
+        if: env.APP_DOMAIN != ''
+        run: |
+          for _ in $(seq 1 20); do
+            curl -fsS "https://$APP_DOMAIN/api/info/" -o /dev/null && { echo "Live: https://$APP_DOMAIN"; exit 0; }
+            sleep 15
+          done
+          echo "https://$APP_DOMAIN is not answering yet — check that the DNS A record points at the instance's Elastic IP." >&2
+          exit 1

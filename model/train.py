@@ -22,9 +22,9 @@ for newly annotated points it is chosen automatically (nearest MediaPipe joint
 + its kinematic parent). Leave-one-out MAE is reported per point.
 
 Run:
-    python src/train.py                       # writes models/geometry_model_51pt.pkl
-    python src/train.py --min-samples 5       # only fit points with >=5 GT images
-    python src/train.py --out models/new.pkl  # write elsewhere (keep old as backup)
+    python model/train.py                      # writes model/weights/geometry_model_51pt.pkl
+    python model/train.py --min-samples 5      # only fit points with >=5 GT images
+    python model/train.py --out model/weights/new.pkl  # write elsewhere (keep old as backup)
 """
 
 from __future__ import annotations
@@ -36,24 +36,30 @@ import numpy as np
 import pandas as pd
 
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import common as C
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from core import common as C
 
 
-def load_gt(csv_path: Path):
-    """Return {filename: (pts_21, {idx: xy})} using the stored MediaPipe rows."""
+def load_gt(csv_path: Path, only_filenames=None):
+    """Return {filename: (pts_21, {idx: xy})} using the stored MediaPipe rows.
+
+    Only rows whose source is in C.TRUSTED_SOURCES are used as fit targets for
+    points 21+, so unverified model_seed pass-through rows never get trained on.
+    """
     df = pd.read_csv(csv_path)
+    if only_filenames is not None:
+        df = df[df["filename"].isin(only_filenames)]
     out = {}
     for fname, sub in df.groupby("filename"):
         base = sub[sub["point_index"].between(0, 20)]
         if len(base) < 21:
             continue
         pts_21 = np.zeros((21, 2), np.float32)
-        ok = True
         for _, r in base.iterrows():
             pts_21[int(r["point_index"])] = [r["x_norm"], r["y_norm"]]
+        trusted = sub[(sub["point_index"] >= 21) & (sub["source"].isin(C.TRUSTED_SOURCES))]
         custom = {int(r["point_index"]): np.array([r["x_norm"], r["y_norm"]], np.float32)
-                  for _, r in sub[sub["point_index"] >= 21].iterrows()}
+                  for _, r in trusted.iterrows()}
         out[fname] = (pts_21, custom)
     return out
 
@@ -140,7 +146,7 @@ def main():
     print("\nBest 5 points  : " + ", ".join(f"Pt{j}({m:.4f})" for j, n, m in report[:5]))
     print("Worst 5 points : " + ", ".join(f"Pt{j}({m:.4f})" for j, n, m in report[-5:]))
     print(f"\nSaved model -> {args.out}")
-    print("Next: python src/evaluate.py   then   python src/detect.py")
+    print("Next: python model/evaluate.py   then   python simulation/detect.py")
 
 
 if __name__ == "__main__":

@@ -15,8 +15,10 @@ As you annotate palm points 51-63, they automatically move from the
 gap noted in the original report.
 
 Run:
-    python src/evaluate.py
-    python src/evaluate.py --save-json docs/metrics_latest.json
+    python model/evaluate.py
+    python model/evaluate.py --save-json docs/metrics_latest.json
+    python model/evaluate.py --model model/weights/geometry_model_v2_hybrid.pkl
+    python model/evaluate.py --holdout --test-frac 0.3   # honest, unseen-image split
 """
 
 from __future__ import annotations
@@ -31,14 +33,20 @@ import numpy as np
 import pandas as pd
 
 import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import common as C
+from core import common as C
 
 
-def evaluate(model_path, gt_csv, img_dir, save_json=None):
+def evaluate(model_path, gt_csv, img_dir, save_json=None, only_images=None):
     point_defs = C.load_point_defs(model_path)
     df = pd.read_csv(gt_csv)
+    # drop unverified pass-through rows so we never score a prediction against
+    # a copy of an earlier prediction (see C.TRUSTED_SOURCES)
+    df = df[(df["point_index"] < 21) | (df["source"].isin(C.TRUSTED_SOURCES))]
     images = sorted(df["filename"].unique())
+    if only_images is not None:
+        images = [f for f in images if f in only_images]
     hands = C.make_hands(static=True, max_hands=1, det_conf=0.3)
 
     errors   = {j: [] for j in range(C.N_TOTAL)}
@@ -85,7 +93,7 @@ def evaluate(model_path, gt_csv, img_dir, save_json=None):
 
     avg_hand = float(np.mean(hand_sizes)) if hand_sizes else 1.0
     all_en = all_e / avg_hand
-    pck = {f"{int(t*100)}%": float((all_en < t).mean()) * 100 for t in (0.02, 0.05, 0.10)}
+    pck = {f"{int(t*100)}%": float((all_en < t).mean()) * 100 for t in (0.01, 0.02, 0.05, 0.10)}
     fps = (1.0 / np.mean(times)) if times else 0.0
 
     per_point = {}
@@ -121,7 +129,7 @@ def evaluate(model_path, gt_csv, img_dir, save_json=None):
     print(f"Overall MAE (norm)  : {all_e.mean():.5f}")
     print(f"Overall RMSE (norm) : {np.sqrt((all_e**2).mean()):.5f}")
     print(f"Overall MAE (px)    : {all_px.mean():.2f}")
-    print(f"PCK@2/5/10%         : {pck['2%']:.1f}% / {pck['5%']:.1f}% / {pck['10%']:.1f}%")
+    print(f"PCK@1/2/5/10%       : {pck['1%']:.1f}% / {pck['2%']:.1f}% / {pck['5%']:.1f}% / {pck['10%']:.1f}%")
     print(f"Inference speed     : {fps:.1f} FPS")
     print(f"Best 5  : " + ", ".join(f"Pt{j}({m:.4f})" for j, m in ranked[:5]))
     print(f"Worst 5 : " + ", ".join(f"Pt{j}({m:.4f})" for j, m in ranked[-5:]))
@@ -135,15 +143,53 @@ def evaluate(model_path, gt_csv, img_dir, save_json=None):
     return summary
 
 
+def holdout_evaluate(gt_csv, img_dir, test_frac=0.3, seed=42, min_samples=3, save_json=None):
+    """Honest generalisation check: fit the geometry model on a random subset
+    of the annotated images, evaluate only on the held-out remainder. Unlike
+    `evaluate()` against the production model, the model here has never seen
+    the images it's scored on."""
+    import train as T
+
+    df = pd.read_csv(gt_csv)
+    df = df[(df["point_index"] < 21) | (df["source"].isin(C.TRUSTED_SOURCES))]
+    images = sorted(df["filename"].unique())
+    rng = np.random.RandomState(seed)
+    shuffled = images.copy()
+    rng.shuffle(shuffled)
+    n_test = max(1, int(round(len(shuffled) * test_frac)))
+    test_images, train_images = shuffled[:n_test], shuffled[n_test:]
+
+    gt_train = T.load_gt(gt_csv, only_filenames=set(train_images))
+    point_defs, _ = T.fit(gt_train, existing_defs={}, min_samples=min_samples)
+
+    tmp_model = C.MODELS_DIR / "_holdout_tmp.pkl"
+    C.save_point_defs(point_defs, tmp_model, source="holdout_fit")
+    print(f"\nHeld-out split: fit on {len(train_images)} images, "
+          f"evaluate on {len(test_images)} unseen images\n")
+    try:
+        return evaluate(tmp_model, gt_csv, img_dir,
+                         save_json=save_json, only_images=set(test_images))
+    finally:
+        tmp_model.unlink(missing_ok=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Evaluate the 64-point model")
     ap.add_argument("--model", default=str(C.MODEL_PATH))
     ap.add_argument("--gt", default=str(C.GT_CSV))
     ap.add_argument("--img", default=str(C.IMAGES_DIR))
     ap.add_argument("--save-json", default=str(C.ROOT / "docs" / "metrics_latest.json"))
+    ap.add_argument("--holdout", action="store_true",
+                    help="honest split: fit on a train subset, score only on unseen images")
+    ap.add_argument("--test-frac", type=float, default=0.3)
     args = ap.parse_args()
-    evaluate(Path(args.model), Path(args.gt), Path(args.img),
-             Path(args.save_json) if args.save_json else None)
+    if args.holdout:
+        holdout_evaluate(Path(args.gt), Path(args.img), test_frac=args.test_frac,
+                          save_json=Path(args.save_json).with_stem(
+                              Path(args.save_json).stem + "_holdout") if args.save_json else None)
+    else:
+        evaluate(Path(args.model), Path(args.gt), Path(args.img),
+                 Path(args.save_json) if args.save_json else None)
 
 
 if __name__ == "__main__":
