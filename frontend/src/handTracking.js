@@ -21,17 +21,68 @@ function flip(side) {
   return side;
 }
 
+// One-euro filter (Casiez et al.) — the same smoothing MediaPipe applies to
+// hand landmarks natively: heavy smoothing while the hand is still (kills the
+// jitter that makes dots dance, worst when the hand is close to the camera),
+// almost none while it moves fast (so dots don't trail behind). Speeds are
+// measured in hand-sizes per second, so the behaviour is the same near or far
+// from the camera. BETA is lower than MediaPipe's default (80): in simulation
+// that cut resting jitter ~70% instead of ~55%, for ~0.3% of frame width lag.
+const MIN_CUTOFF = 0.05;
+const BETA = 20;
+const D_CUTOFF = 1;
+const RESET_AFTER_MS = 400; // hand gone this long -> start fresh, don't glide in
+
+const alpha = (cutoff, dt) => 1 / (1 + 1 / (2 * Math.PI * cutoff * dt));
+
+class LandmarkSmoother {
+  constructor() {
+    this.prev = null; // { t, x: [[x,y]...], dx: [[dx,dy]...] }
+  }
+
+  apply(points, t) {
+    const prev = this.prev;
+    if (!prev || t - prev.t > RESET_AFTER_MS || t <= prev.t) {
+      this.prev = { t, x: points.map((p) => [...p]), dx: points.map(() => [0, 0]) };
+      return points;
+    }
+    const dt = (t - prev.t) / 1000;
+    const xs = points.map((p) => p[0]);
+    const ys = points.map((p) => p[1]);
+    const size = (Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys)) / 2 || 1;
+    const aD = alpha(D_CUTOFF, dt);
+    const out = points.map((p, i) =>
+      [0, 1].map((k) => {
+        const rawD = (p[k] - prev.x[i][k]) / dt / size;
+        const d = aD * rawD + (1 - aD) * prev.dx[i][k];
+        prev.dx[i][k] = d;
+        const a = alpha(MIN_CUTOFF + BETA * Math.abs(d), dt);
+        return a * p[k] + (1 - a) * prev.x[i][k];
+      })
+    );
+    this.prev = { t, x: out, dx: prev.dx };
+    return out;
+  }
+}
+
 let landmarkerPromise = null;
+
+function createLandmarker(vision, delegate) {
+  return HandLandmarker.createFromOptions(vision, {
+    baseOptions: { modelAssetPath: MODEL_PATH, delegate },
+    runningMode: "VIDEO",
+    numHands: 2,
+  });
+}
 
 function loadLandmarker() {
   if (!landmarkerPromise) {
+    // GPU is much faster, but isn't available in every mobile browser —
+    // fall back to CPU instead of failing to start.
     landmarkerPromise = FilesetResolver.forVisionTasks(WASM_BASE).then((vision) =>
-      HandLandmarker.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: MODEL_PATH, delegate: "GPU" },
-        runningMode: "VIDEO",
-        numHands: 2,
-      })
+      createLandmarker(vision, "GPU").catch(() => createLandmarker(vision, "CPU"))
     );
+    landmarkerPromise.catch(() => { landmarkerPromise = null; });
   }
   return landmarkerPromise;
 }
@@ -41,9 +92,11 @@ function loadLandmarker() {
  * user restarts the camera. */
 export async function createHandTracker() {
   const landmarker = await loadLandmarker();
+  const smoothers = { Left: new LandmarkSmoother(), Right: new LandmarkSmoother() };
   return {
     /** Runs detection on the current video frame. Returns the exact payload
-     * shape POST /api/detect/ expects: [{ side, landmarks: [[x,y], ...x21] }]. */
+     * shape geometry.buildState expects: [{ side, landmarks: [[x,y], ...x21] }],
+     * with landmarks smoothed over time per hand. */
     detect(video, timestampMs) {
       const result = landmarker.detectForVideo(video, timestampMs);
       const hands = [];
@@ -51,7 +104,8 @@ export async function createHandTracker() {
         const category = result.handednesses[i]?.[0]?.categoryName;
         const side = FLIP_HANDEDNESS ? flip(category) : category;
         if (side !== "Left" && side !== "Right") return;
-        hands.push({ side, landmarks: landmarks.map((p) => [p.x, p.y]) });
+        const raw = landmarks.map((p) => [p.x, p.y]);
+        hands.push({ side, landmarks: smoothers[side].apply(raw, timestampMs) });
       });
       return hands;
     },

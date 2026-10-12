@@ -137,6 +137,7 @@ a, button, [role="button"], select, input, .problem-row {
 
 @media (max-width: 920px) {
   .layout { grid-template-columns: 1fr; padding: 16px; height: auto; }
+  .video-frame { --video-max-h: 70vh; }
   .video-panel, .problems-panel { max-height: none; }
   .topbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; position: static; }
 }
@@ -150,9 +151,10 @@ a, button, [role="button"], select, input, .problem-row {
 }
 
 .video-frame {
+  --video-max-h: 56vh;
   position: relative;
   aspect-ratio: 16 / 9;
-  max-height: 56vh;
+  max-height: var(--video-max-h);
   background: #0e1614;
   border-radius: 12px;
   overflow: hidden;

@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { detectHands, fetchInfo } from "./api";
+import { fetchInfo } from "./api";
+import { buildState } from "./geometry";
 import { createHandTracker } from "./handTracking";
 import { drawOverlay, drawPlaceholderMessage } from "./overlay";
 import ProblemPanel from "./components/ProblemPanel";
 import MetricsBox from "./components/MetricsBox";
 
-// Floor only, to avoid pegging the CPU beyond what the display can show —
-// the actual rate is governed by how fast detect()+the backend round trip
-// finish (the loop is fully serialized: it awaits the previous request
-// before scheduling the next one), not by this number.
-const DETECT_INTERVAL_MS = 16; // ~60/s ceiling
+// The point geometry runs in the browser (geometry.js) on the same frame
+// that is on screen — no per-frame server call — so the loop just processes
+// each new camera frame as it arrives.
 
 function getInitialTheme() {
   try {
@@ -35,6 +34,7 @@ export default function App() {
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [section, setSection] = useState("acupressure"); // "acupressure" | "su_jok"
   const [detectRate, setDetectRate] = useState(null);
+  const [videoAspect, setVideoAspect] = useState(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [infoError, setInfoError] = useState("");
@@ -47,7 +47,11 @@ export default function App() {
   const runningRef = useRef(false);
   const selectedProblemRef = useRef(null);
   const sectionRef = useRef("acupressure");
-  const lastTickRef = useRef(0);
+  const engineRef = useRef(null);
+  const problemsRef = useRef([]);
+  const lastVideoTimeRef = useRef(-1);
+  const lastUiRef = useRef("");
+  const rateRef = useRef({ frames: 0, since: 0 });
   const toastTimer = useRef(null);
 
   selectedProblemRef.current = selectedProblem;
@@ -71,6 +75,8 @@ export default function App() {
     fetchInfo()
       .then((data) => {
         setProblems(data.problems || []);
+        problemsRef.current = data.problems || [];
+        engineRef.current = data.engine || null;
         setReferenceViews(data.reference_views || []);
         setMetrics(data.metrics || {});
       })
@@ -112,37 +118,51 @@ export default function App() {
     rafRef.current = null;
   }
 
-  async function detectionLoop() {
+  function detectionLoop() {
     if (!runningRef.current) return;
-    const now = performance.now();
-    if (now - lastTickRef.current >= DETECT_INTERVAL_MS) {
-      const interval = now - lastTickRef.current;
-      lastTickRef.current = now;
-      if (interval < 2000) setDetectRate(Math.round(1000 / interval));
-
-      const video = videoRef.current;
-      if (video && video.readyState >= 2 && trackerRef.current) {
-        const handsIn = trackerRef.current.detect(video, now);
-        try {
-          const state = await detectHands(handsIn);
-          if (!runningRef.current) return;
-          setHands(state.hands || []);
-          setLiveProblems(state.problems || []);
-          renderOverlay(state.hands || [], state.active_points || []);
-        } catch {
-          // transient network hiccup — try again next tick
-        }
-      }
+    const video = videoRef.current;
+    // Only run the (expensive) hand model when the camera has produced a new
+    // frame — the display refreshes faster than most phone cameras deliver.
+    if (video && video.readyState >= 2 && trackerRef.current && engineRef.current &&
+        video.currentTime !== lastVideoTimeRef.current) {
+      lastVideoTimeRef.current = video.currentTime;
+      const now = performance.now();
+      const state = buildState(trackerRef.current.detect(video, now), engineRef.current, problemsRef.current);
+      renderOverlay(state.hands, state.active_points);
+      updateUi(state, now);
     }
     rafRef.current = requestAnimationFrame(detectionLoop);
+  }
+
+  /** React state drives the side panel, not the overlay — only touch it when
+   * something visible there changed, so the page isn't re-rendered (and the
+   * camera loop starved) 30 times a second. */
+  function updateUi(state, now) {
+    const key = JSON.stringify([
+      state.hands,
+      state.problems.map((p) => [p.name, p.found_points.length, p.complete]),
+    ]);
+    if (key !== lastUiRef.current) {
+      lastUiRef.current = key;
+      setHands(state.hands);
+      setLiveProblems(state.problems);
+    }
+    const rate = rateRef.current;
+    rate.frames += 1;
+    if (!rate.since) rate.since = now;
+    if (now - rate.since >= 1000) {
+      setDetectRate(Math.round((rate.frames * 1000) / (now - rate.since)));
+      rate.frames = 0;
+      rate.since = now;
+    }
   }
 
   function renderOverlay(handsNow, pointsNow) {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video || !video.videoWidth) return;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+    if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
 
     if (!handsNow.length) {
@@ -169,13 +189,24 @@ export default function App() {
     setError("");
     setStarting(true);
     try {
+      if (!engineRef.current) {
+        throw new Error("the app has not finished loading — check your connection and press Retry");
+      }
       // 720p is unnecessarily heavy input for the hand-landmark model — it
       // has to resize every frame down to its own input size regardless, so
       // a smaller capture resolution cuts that per-frame cost with no real
-      // accuracy loss for hand tracking. Snapshot quality is unaffected
-      // (still captured from this same stream, just at 640x480 instead).
+      // accuracy loss for hand tracking. "ideal" (not exact) sizes let phones
+      // pick their nearest native mode, e.g. 480x640 in portrait.
+      // facingMode "user": always the front (selfie) camera — the mirrored
+      // display and the handedness correction both assume it, and some
+      // phones otherwise open the back camera.
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, frameRate: { ideal: 30 } },
+        video: {
+          facingMode: "user",
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          frameRate: { ideal: 30 },
+        },
       });
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
@@ -184,7 +215,9 @@ export default function App() {
       trackerRef.current = await createHandTracker();
 
       runningRef.current = true;
-      lastTickRef.current = 0;
+      lastVideoTimeRef.current = -1;
+      lastUiRef.current = "";
+      rateRef.current = { frames: 0, since: 0 };
       setRunning(true);
       rafRef.current = requestAnimationFrame(detectionLoop);
     } catch (err) {
@@ -299,9 +332,27 @@ export default function App() {
 
       <main className="layout">
         <section className="panel video-panel">
-          <div className="video-frame">
+          <div
+            className="video-frame"
+            style={running && videoAspect ? {
+              aspectRatio: `${videoAspect[0]} / ${videoAspect[1]}`,
+              // keep the frame's shape when max-height kicks in (portrait
+              // phones), instead of letting object-fit crop the feed
+              maxWidth: `calc(var(--video-max-h) * ${videoAspect[0] / videoAspect[1]})`,
+              marginInline: "auto",
+              width: "100%",
+            } : undefined}
+          >
             <div className="video-stage" style={{ display: running ? "block" : "none" }}>
-              <video ref={videoRef} muted playsInline />
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                // Size the frame to the camera's real shape (portrait on most
+                // phones) so nothing the model sees is cropped out of view.
+                onLoadedMetadata={(e) => setVideoAspect([e.target.videoWidth, e.target.videoHeight])}
+                onResize={(e) => setVideoAspect([e.target.videoWidth, e.target.videoHeight])}
+              />
               <canvas ref={canvasRef} />
             </div>
             {!running && (

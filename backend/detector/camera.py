@@ -144,10 +144,38 @@ def _reference_views() -> list[dict]:
     return views
 
 
+def _engine() -> dict:
+    """Everything the browser needs to run predict_64 + resolve_points +
+    resolve_problems itself, every frame, with no server round trip (see
+    frontend/src/geometry.js — a line-for-line port of core/common.py):
+    the loaded model's point definitions and the ACU_POINTS atlas."""
+    def point_def(pdf):
+        if pdf.get("kind") == "ridge":
+            return {"kind": "ridge",
+                    "coef": np.asarray(pdf["coef"], dtype=float).tolist(),
+                    "intercept": np.asarray(pdf["intercept"], dtype=float).tolist()}
+        return {"kind": "geometry", "anchor": int(pdf["anchor"]), "parent": int(pdf["parent"]),
+                "mean_perp": float(pdf["mean_perp"]), "mean_along": float(pdf["mean_along"])}
+
+    def acu_point(label, pdf):
+        out = {k: v for k, v in pdf.items() if k != "weights"}
+        if "weights" in pdf:
+            out["weights"] = [[int(j), float(w)] for j, w in pdf["weights"].items()]
+        out["color"] = bgr_to_hex(POINT_COLORS[label])
+        return out
+
+    return {
+        "model": MODEL_PATH.name,
+        "point_defs": {str(j): point_def(pdf) for j, pdf in POINT_DEFS.items()},
+        "acu_points": {label: acu_point(label, pdf) for label, pdf in C.ACU_POINTS.items()},
+    }
+
+
 POINT_CATALOG = _point_catalog()
 PROBLEM_CATALOG = _problem_catalog()
 BASELINE_METRICS = _baseline_metrics()
 REFERENCE_VIEWS = _reference_views()
+ENGINE = _engine()
 
 
 def hands_from_landmarks(hands_in: list) -> dict:

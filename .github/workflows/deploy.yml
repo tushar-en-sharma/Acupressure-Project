@@ -40,6 +40,13 @@ jobs:
       # The annotation-tool tests need OpenCV/MediaPipe, which the deployed
       # image doesn't ship — these cover everything the server actually runs.
       - run: pytest -q tests/test_backend_api.py tests/test_common_unit.py tests/test_common_regression.py
+      # The browser runs its own copy of the point geometry (frontend/src/geometry.js);
+      # regenerate the expected outputs from the Python and check the JS matches.
+      - run: python tests/make_geometry_fixture.py
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node --test frontend/src/geometry.test.js
 
   deploy:
     needs: test

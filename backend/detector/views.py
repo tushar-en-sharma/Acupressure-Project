@@ -12,6 +12,7 @@ def api_info(request):
         "meridians": cam.C.MERIDIANS,
         "metrics": cam.BASELINE_METRICS,
         "reference_views": cam.REFERENCE_VIEWS,
+        "engine": cam.ENGINE,
     })
 
 
