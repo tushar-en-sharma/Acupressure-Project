@@ -18,6 +18,9 @@ set -euo pipefail
 AWS_REGION="${AWS_REGION:-ap-south-1}"
 INSTANCE_ID="${INSTANCE_ID:-i-0863178360ec9127e}"
 GITHUB_REPO="${GITHUB_REPO:-tushar-en-sharma/Acupressure-Project}"
+# GitHub's OIDC subject may use immutable IDs ("owner@ownerId/repo@repoId")
+# instead of plain names, so the trust policy accepts both forms.
+GITHUB_REPO_IDS="${GITHUB_REPO_IDS:-tushar-en-sharma@38156116/Acupressure-Project@1319323285}"
 ECR_REPO="${ECR_REPO:-acupressure-backend}"
 DEPLOY_ROLE="${DEPLOY_ROLE:-acupressure-github-deploy}"
 export AWS_REGION AWS_DEFAULT_REGION="$AWS_REGION"
@@ -83,7 +86,9 @@ TRUST="$(cat <<EOF
       "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
       "StringLike": {"token.actions.githubusercontent.com:sub": [
         "repo:${GITHUB_REPO}:environment:production",
-        "repo:${GITHUB_REPO}:ref:refs/heads/main"
+        "repo:${GITHUB_REPO}:ref:refs/heads/main",
+        "repo:${GITHUB_REPO_IDS}:environment:production",
+        "repo:${GITHUB_REPO_IDS}:ref:refs/heads/main"
       ]}
     }
   }]
