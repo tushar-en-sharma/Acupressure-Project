@@ -168,7 +168,7 @@ export default function ProblemDetail({ problem, views, engine, camera, onBack }
             <h2 id="where-title" className="panel-title">{stepNo(1)}Where to press</h2>
             {views?.length > 0 && (
               <button type="button" className="btn btn-ghost btn-sm"
-                onClick={() => downloadDiagram(diagramRef.current, `Su Jok - ${titleOf(problem).replace(/[\\/]+/g, "-")}.png`)}>
+                onClick={() => downloadDiagram(diagramRef.current, `Revive Acupressure - ${titleOf(problem).replace(/[\\/]+/g, "-")}.png`)}>
                 <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M10 3v9.5M6.2 9l3.8 3.8L13.8 9M3.5 15.5h13" />
                 </svg>

@@ -3,7 +3,7 @@ import { STEPS } from "./steps.jsx";
 
 const SLIDES = [
   {
-    title: "Welcome to Revive Su Jok",
+    title: "Welcome to Revive Acupressure App",
     text: "In Su Jok, your hand is a small map of your body. This app shows you gentle pressure-point guides for everyday wellbeing.",
   },
   {

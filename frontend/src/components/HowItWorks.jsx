@@ -3,7 +3,7 @@ import { STEPS, ICON_STYLE as S } from "./steps.jsx";
 export default function HowItWorks({ onOpenIntro }) {
   return (
     <section className="how" aria-labelledby="how-h">
-      <h2 id="how-h">How Revive Su Jok works</h2>
+      <h2 id="how-h">How the Revive Acupressure App works</h2>
       <p className="how-lede">
         In Su Jok, your hand is a small map of your body. Gentle pressure on points of
         the hand is used as a complementary approach to everyday wellbeing.

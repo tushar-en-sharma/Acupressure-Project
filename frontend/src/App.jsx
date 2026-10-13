@@ -245,7 +245,7 @@ export default function App() {
     ctx.drawImage(canvasRef.current, 0, 0, out.width, out.height);
     const a = document.createElement("a");
     a.href = out.toDataURL("image/jpeg", 0.9);
-    a.download = `su-jok-${Date.now()}.jpg`;
+    a.download = `revive-acupressure-${Date.now()}.jpg`;
     a.click();
   }
 
@@ -272,7 +272,7 @@ export default function App() {
         <button type="button" className="brand" onClick={closeProblem} aria-label="Home">
           <img className="brand-mark" src="/img/logo-200.webp" width="44" height="44" alt="" />
           <span className="brand-sep" aria-hidden="true" />
-          <span className="brand-name">Revive Su Jok</span>
+          <span className="brand-name">Revive Acupressure App</span>
         </button>
         <div className="top-actions">
         <a className="top-link" href={site.siteUrl} target="_blank" rel="noopener">Main website</a>
