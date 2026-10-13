@@ -40,6 +40,10 @@ export default function App() {
   const [cameraError, setCameraError] = useState("");
   const [live, setLive] = useState({ hands: [], found: [], complete: false });
   const [videoAspect, setVideoAspect] = useState(null);
+  // Which camera the user asked for, and whether the live feed is shown as a
+  // mirrored "selfie" (front camera) or as-is (back camera).
+  const [facing, setFacing] = useState("user");
+  const [mirrored, setMirrored] = useState(true);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -51,6 +55,7 @@ export default function App() {
   const problemRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
   const lastUiRef = useRef("");
+  const mirroredRef = useRef(true);
 
   const visibleProblems = problems.filter((p) => VISIBLE_SYSTEMS.has(p.system));
   const problem = visibleProblems.find((p) => p.name === selected) || null;
@@ -144,21 +149,28 @@ export default function App() {
     if (!canvas || !video || !video.videoWidth) return;
     if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
     if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
-    drawOverlay(canvas.getContext("2d"), canvas.width, canvas.height, points);
+    drawOverlay(canvas.getContext("2d"), canvas.width, canvas.height, points, mirroredRef.current);
   }
 
-  async function startCamera() {
+  async function startCamera(want = facing) {
     setCameraError("");
     setStarting(true);
     try {
       if (!engineRef.current) throw new Error("the app is still loading — try again in a moment");
-      // Front camera only: the mirrored preview and the left/right hand
-      // correction both assume it, and some phones default to the back one.
-      // "ideal" sizes let phones pick their nearest native mode.
+      // Front ("user") or back ("environment") camera. "ideal" lets devices
+      // with one camera (most laptops) still start instead of failing.
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+        video: { facingMode: { ideal: want }, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
       });
       streamRef.current = stream;
+      // Trust what the browser actually gave us; if it doesn't say, it's a
+      // webcam/front camera. Only the front camera is shown mirrored. The
+      // hand-side detection works on the raw frame, so it's the same for both.
+      const actual = stream.getVideoTracks()[0]?.getSettings?.().facingMode;
+      const isBack = actual === "environment";
+      mirroredRef.current = !isBack;
+      setMirrored(!isBack);
+      setFacing(isBack ? "environment" : "user");
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
       trackerRef.current = await createHandTracker();
@@ -168,6 +180,9 @@ export default function App() {
       lastUiRef.current = "";
       setRunning(true);
       rafRef.current = requestAnimationFrame(detectionLoop);
+      if (want === "environment" && !isBack) {
+        setCameraError("No back camera found on this device, so the front camera is being used.");
+      }
     } catch (err) {
       setCameraError(
         err?.name === "NotAllowedError"
@@ -190,6 +205,18 @@ export default function App() {
     setLive({ hands: [], found: [], complete: false });
   }
 
+  // Picks the camera; if the camera is already on, restarts it on the new one.
+  async function chooseCamera(want) {
+    if (want === facing && !running) return;
+    if (!running) {
+      setFacing(want);
+      return;
+    }
+    if (want === facing) return;
+    stopCamera();
+    await startCamera(want);
+  }
+
   function savePhoto() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
@@ -197,10 +224,13 @@ export default function App() {
     out.width = video.videoWidth;
     out.height = video.videoHeight;
     const ctx = out.getContext("2d");
-    // the preview is mirrored with CSS; the overlay already draws mirrored
+    // the front-camera preview is mirrored with CSS; the overlay already
+    // draws in the same orientation as what's on screen
     ctx.save();
-    ctx.translate(out.width, 0);
-    ctx.scale(-1, 1);
+    if (mirroredRef.current) {
+      ctx.translate(out.width, 0);
+      ctx.scale(-1, 1);
+    }
     ctx.drawImage(video, 0, 0, out.width, out.height);
     ctx.restore();
     ctx.drawImage(canvasRef.current, 0, 0, out.width, out.height);
@@ -219,7 +249,10 @@ export default function App() {
     live,
     videoAspect,
     onVideoSize: (w, h) => setVideoAspect([w, h]),
-    start: startCamera,
+    facing,
+    mirrored,
+    chooseCamera,
+    start: () => startCamera(facing),
     stop: stopCamera,
     savePhoto,
   };

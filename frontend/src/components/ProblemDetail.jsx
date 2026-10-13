@@ -43,7 +43,16 @@ function CameraPanel({ camera, faces, color }) {
     <section className="panel camera-panel" aria-labelledby="cam-title">
       <h2 id="cam-title" className="panel-title">Find it on your hand</h2>
 
-      <div className={`cam-frame${running ? " on" : ""}`} style={frameStyle}>
+      <div className="cam-switch" role="group" aria-label="Choose camera">
+        {[["user", "Front camera"], ["environment", "Back camera"]].map(([v, l]) => (
+          <button key={v} type="button" className={camera.facing === v ? "on" : ""}
+            aria-pressed={camera.facing === v} disabled={starting} onClick={() => camera.chooseCamera(v)}>
+            {l}
+          </button>
+        ))}
+      </div>
+
+      <div className={`cam-frame${running ? " on" : ""}${camera.mirrored ? " mirror" : ""}`} style={frameStyle}>
         <video
           ref={videoRef}
           muted

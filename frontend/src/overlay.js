@@ -1,12 +1,13 @@
 import { pointName } from "./pointName";
 
 // Draws the selected problem's points on a <canvas> in front of the live
-// video. The video is mirrored with CSS for the "selfie" look; this canvas
-// isn't (mirroring it would flip the labels backwards), so x is mirrored here
-// instead and the circles land on the right spot with readable text.
+// video. The front camera is mirrored with CSS for the "selfie" look; this
+// canvas isn't (mirroring it would flip the labels backwards), so x is
+// mirrored here instead and the circles land on the right spot with readable
+// text. The back camera isn't mirrored at all, so x is used as-is.
 // Sizes scale with the frame so they stay legible on small phone screens.
 
-export function drawOverlay(ctx, width, height, points) {
+export function drawOverlay(ctx, width, height, points, mirrored = true) {
   ctx.clearRect(0, 0, width, height);
   if (!points.length) return;
 
@@ -17,7 +18,7 @@ export function drawOverlay(ctx, width, height, points) {
 
   for (const point of points) {
     const [nx, ny] = point.coord;
-    const cx = (1 - nx) * width;
+    const cx = (mirrored ? 1 - nx : nx) * width;
     const cy = ny * height;
     const color = point.color;
 
