@@ -5,6 +5,9 @@ import { createHandTracker } from "./handTracking";
 import { drawOverlay } from "./overlay";
 import ProblemList from "./components/ProblemList";
 import ProblemDetail from "./components/ProblemDetail";
+import ConsultOptions from "./components/ConsultOptions";
+import SiteFooter from "./components/SiteFooter";
+import site from "./site";
 
 // Which point systems the app offers. Classical acupressure is hidden for
 // now — add "hand_acupoint" / "hand_reflex" back here to show it again.
@@ -17,7 +20,7 @@ function getInitialTheme() {
   } catch {
     // localStorage unavailable (private browsing, etc.) — fall through
   }
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return "light"; // light by default; dark only if the user switches it
 }
 
 function problemFromUrl() {
@@ -229,6 +232,9 @@ export default function App() {
           <span className="brand-sep" aria-hidden="true" />
           <span className="brand-name">Revive Su Jok</span>
         </button>
+        <div className="top-actions">
+        <a className="top-link" href={site.siteUrl} target="_blank" rel="noopener">Main website</a>
+        <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener">Book</a>
         <button
           type="button"
           className="icon-btn"
@@ -247,6 +253,7 @@ export default function App() {
             </svg>
           )}
         </button>
+        </div>
       </header>
 
       <main className="main">
@@ -264,7 +271,10 @@ export default function App() {
             onBack={closeProblem}
           />
         ) : (
-          <ProblemList problems={visibleProblems} loading={!problems.length} onOpen={openProblem} />
+          <>
+            <ProblemList problems={visibleProblems} loading={!problems.length} onOpen={openProblem} />
+            <ConsultOptions />
+          </>
         )}
       </main>
 
@@ -280,12 +290,13 @@ export default function App() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" strokeLinejoin="round" /></svg>
           Explore
         </button>
+        <a className="tab" href={site.bookUrl} target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4M16 3v4M4 10h16" strokeLinecap="round" /></svg>
+          Book
+        </a>
       </nav>
 
-      <footer className="footer">
-        For general wellness only &mdash; not a substitute for professional medical advice.
-        See a doctor for severe, sudden or lasting pain.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

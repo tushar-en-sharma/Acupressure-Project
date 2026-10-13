@@ -2,6 +2,7 @@ import { useRef } from "react";
 import HandDiagram from "./HandDiagram";
 import { downloadDiagram } from "../downloadDiagram";
 import { pointName } from "../pointName";
+import BookCard from "./BookCard";
 
 const titleOf = (p) => p.title || p.name;
 
@@ -145,6 +146,7 @@ export default function ProblemDetail({ problem, views, engine, camera, onBack }
           </ol>
         </section>
       </div>
+      <BookCard compact />
     </article>
   );
 }
