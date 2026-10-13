@@ -225,13 +225,9 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <button type="button" className="brand" onClick={closeProblem} aria-label="Home">
-          <span className="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-              <path d="M2.5 12.5h4.3l1.8-3.6 2.4 6.8 2-4.4 1.3 2.2h5.2"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
-          <span className="brand-name">Revive <span>Su Jok</span></span>
+          <img className="brand-mark" src="/img/logo-200.webp" width="44" height="44" alt="" />
+          <span className="brand-sep" aria-hidden="true" />
+          <span className="brand-name">Revive Su Jok</span>
         </button>
         <button
           type="button"
@@ -271,6 +267,20 @@ export default function App() {
           <ProblemList problems={visibleProblems} loading={!problems.length} onOpen={openProblem} />
         )}
       </main>
+
+      <nav className="tabbar" aria-label="Main">
+        <button type="button" className={`tab${!problem ? " on" : ""}`} onClick={() => { if (problem) closeProblem(); else window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 10.5V21h6v-6h6v6h6V10.5z" /></svg>
+          Home
+        </button>
+        <button type="button" className="tab" onClick={() => {
+          const go = () => document.getElementById("areas")?.scrollIntoView({ behavior: "smooth" });
+          if (problem) { closeProblem(); setTimeout(go, 150); } else go();
+        }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" strokeLinejoin="round" /></svg>
+          Explore
+        </button>
+      </nav>
 
       <footer className="footer">
         For general wellness only &mdash; not a substitute for professional medical advice.
