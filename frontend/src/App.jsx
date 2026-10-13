@@ -156,8 +156,10 @@ export default function App() {
         target ? [target] : []
       );
       const status = state.problems[0];
-      const wanted = new Set(status?.required_points || []);
-      renderOverlay(state.active_points.filter((p) => wanted.has(p.label)));
+      // Draw every point of every option for this problem (e.g. both
+      // shoulders, palm and back-of-head), on every hand where it shows.
+      const wanted = new Set((target?.protocols || []).flatMap((pr) => pr.points));
+      renderOverlay(state.all_points.filter((p) => wanted.has(p.label)));
 
       // Only re-render React when what the user sees in the panel changes.
       const next = { hands: state.hands, found: status?.found_points || [], complete: !!status?.complete };

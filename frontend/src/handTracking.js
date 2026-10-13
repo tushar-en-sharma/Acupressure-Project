@@ -99,15 +99,25 @@ export async function createHandTracker() {
      * with landmarks smoothed over time per hand. */
     detect(video, timestampMs) {
       const result = landmarker.detectForVideo(video, timestampMs);
-      const hands = [];
+      // Work out each hand's side first. MediaPipe can label two hands the
+      // same way (both "Right"); then the less confident one is given the
+      // other side, so both hands are kept instead of one being dropped.
+      const found = [];
       result.landmarks.forEach((landmarks, i) => {
-        const category = result.handednesses[i]?.[0]?.categoryName;
+        const top = result.handednesses[i]?.[0];
+        const category = top?.categoryName;
         const side = FLIP_HANDEDNESS ? flip(category) : category;
         if (side !== "Left" && side !== "Right") return;
-        const raw = landmarks.map((p) => [p.x, p.y]);
-        hands.push({ side, landmarks: smoothers[side].apply(raw, timestampMs) });
+        found.push({ side, score: top?.score ?? 0, landmarks });
       });
-      return hands;
+      if (found.length === 2 && found[0].side === found[1].side) {
+        const weaker = found[0].score < found[1].score ? found[0] : found[1];
+        weaker.side = flip(weaker.side);
+      }
+      return found.map(({ side, landmarks }) => {
+        const raw = landmarks.map((p) => [p.x, p.y]);
+        return { side, landmarks: smoothers[side].apply(raw, timestampMs) };
+      });
     },
   };
 }

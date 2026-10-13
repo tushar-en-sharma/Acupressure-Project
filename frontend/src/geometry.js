@@ -116,7 +116,10 @@ function formulaPoint(pts21, pdf) {
 
 /** hands: [{ side, pts64, facing }] in detection order. Returns the same
  * active_points list POST /api/detect/ used to: first hand to show a point wins. */
-export function resolvePoints(hands, acuPoints) {
+export function resolvePoints(hands, acuPoints, perHand = false) {
+  // perHand=false: one entry per label (first hand wins), matching the backend.
+  // perHand=true: every hand that shows a point gets its own entry, so the
+  // same point can be marked on both hands.
   const found = new Map();
   for (const { side, pts64, facing } of hands) {
     const pts21 = pts64.slice(0, 21);
@@ -134,8 +137,9 @@ export function resolvePoints(hands, acuPoints) {
       }
       const [x, y] = xy;
       if (!(x >= 0 && x <= 1 && y >= 0 && y <= 1)) continue;
-      if (!found.has(label)) {
-        found.set(label, { label, side, coord: [x, y], system: pdf.system, meridian: pdf.meridian, color: pdf.color });
+      const key = perHand ? `${label}|${side}` : label;
+      if (!found.has(key)) {
+        found.set(key, { label, side, coord: [x, y], system: pdf.system, meridian: pdf.meridian, color: pdf.color });
       }
     }
   }
@@ -177,6 +181,8 @@ export function buildState(handsIn, engine, problems) {
   return {
     hands: hands.map(({ side, facing }) => ({ side, facing })),
     active_points: activePoints,
+    // Same points, but one per hand: used for drawing on screen.
+    all_points: resolvePoints(hands, engine.acu_points, true),
     problems: resolveProblems(activePoints, problems),
   };
 }
