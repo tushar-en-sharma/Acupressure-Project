@@ -6,6 +6,7 @@ import { drawOverlay } from "./overlay";
 import ProblemList from "./components/ProblemList";
 import ProblemDetail from "./components/ProblemDetail";
 import ConsultOptions from "./components/ConsultOptions";
+import Welcome from "./components/Welcome";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
 
@@ -42,6 +43,9 @@ export default function App() {
   const [videoAspect, setVideoAspect] = useState(null);
   // Which camera the user asked for, and whether the live feed is shown as a
   // mirrored "selfie" (front camera) or as-is (back camera).
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !localStorage.getItem("sujok-intro-seen"); } catch { return false; }
+  });
   const [facing, setFacing] = useState("user");
   const [mirrored, setMirrored] = useState(true);
 
@@ -93,6 +97,11 @@ export default function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function closeIntro() {
+    setShowIntro(false);
+    try { localStorage.setItem("sujok-intro-seen", "1"); } catch { /* shows again next visit */ }
+  }
 
   function openProblem(name) {
     window.history.pushState({}, "", `?problem=${encodeURIComponent(name)}`);
@@ -268,6 +277,12 @@ export default function App() {
         <div className="top-actions">
         <a className="top-link" href={site.siteUrl} target="_blank" rel="noopener">Main website</a>
         <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener">Book</a>
+        <button type="button" className="icon-btn" onClick={() => setShowIntro(true)}
+          aria-label="How it works" title="How it works">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01" />
+          </svg>
+        </button>
         <button
           type="button"
           className="icon-btn"
@@ -305,7 +320,7 @@ export default function App() {
           />
         ) : (
           <>
-            <ProblemList problems={visibleProblems} loading={!problems.length} onOpen={openProblem} />
+            <ProblemList problems={visibleProblems} loading={!problems.length} onOpen={openProblem} onOpenIntro={() => setShowIntro(true)} />
             <ConsultOptions />
           </>
         )}
@@ -330,6 +345,7 @@ export default function App() {
       </nav>
 
       <SiteFooter />
+      {showIntro && <Welcome onClose={closeIntro} />}
     </div>
   );
 }

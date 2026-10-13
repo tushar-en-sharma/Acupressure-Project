@@ -32,16 +32,45 @@ function liveMessage(camera, faces) {
   return { tone: "info", text: "Almost there — keep your whole hand in view and hold it still." };
 }
 
+function checklist(camera, faces) {
+  const { live } = camera;
+  const hasHand = live.hands.length > 0;
+  const face = faces.size === 1 ? [...faces][0] : null;
+  const sideOk = hasHand && (!face || live.hands.some((h) => h.facing === face));
+  return [
+    { label: "Hand in view", done: hasHand },
+    { label: face ? `${face === "palm" ? "Palm" : "Back of hand"} facing camera` : "Hand facing camera", done: sideOk },
+    { label: "Point found", done: live.complete },
+  ];
+}
+
+const stepNo = (n) => <span className="step-no" aria-hidden="true">{n}</span>;
+
+const goTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+function NextCue({ to, children }) {
+  return (
+    <button type="button" className="next-cue" onClick={() => goTo(to)}>
+      {children}
+      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+        <path d="M10 4v12M5 11l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
+  );
+}
+
 function CameraPanel({ camera, faces, color }) {
   const { running, starting, error, videoAspect, videoRef, canvasRef } = camera;
   const msg = running ? liveMessage(camera, faces) : null;
+  const checks = running ? checklist(camera, faces) : null;
+  const faceWord = faces.size === 1 ? ([...faces][0] === "palm" ? "palm" : "back of your hand") : "hand";
   const frameStyle = running && videoAspect
     ? { aspectRatio: `${videoAspect[0]} / ${videoAspect[1]}`, maxWidth: `calc(var(--cam-max-h) * ${videoAspect[0] / videoAspect[1]})` }
     : undefined;
 
   return (
-    <section className="panel camera-panel" aria-labelledby="cam-title">
-      <h2 id="cam-title" className="panel-title">Find it on your hand</h2>
+    <section className="panel camera-panel" id="step-camera" aria-labelledby="cam-title">
+      <h2 id="cam-title" className="panel-title">{stepNo(2)}Find it on your hand</h2>
 
       <div className="cam-switch" role="group" aria-label="Choose camera">
         {[["user", "Front camera"], ["environment", "Back camera"]].map(([v, l]) => (
@@ -68,6 +97,11 @@ function CameraPanel({ camera, faces, color }) {
               <circle cx="12" cy="13" r="3.5" />
             </svg>
             <p>Your camera shows the exact spot, live on your hand.</p>
+            <ul className="pose">
+              <li>Hold one hand up, fingers pointing up</li>
+              <li>Show the {faceWord} to the camera</li>
+              <li>About an arm&rsquo;s length away, in good light</li>
+            </ul>
             <button type="button" className="btn btn-primary btn-lg" onClick={camera.start} disabled={starting}
               style={{ "--c": color }}>
               {starting ? "Starting camera…" : "Start camera"}
@@ -83,6 +117,15 @@ function CameraPanel({ camera, faces, color }) {
           {msg.text}
         </p>
       )}
+      {checks && (
+        <ul className="checklist" aria-label="Progress">
+          {checks.map((c) => (
+            <li key={c.label} className={c.done ? "done" : ""}>
+              <span aria-hidden="true">{c.done ? "✓" : ""}</span>{c.label}
+            </li>
+          ))}
+        </ul>
+      )}
       {error && <p className="notice notice-error small" role="alert">{error}</p>}
 
       {running && (
@@ -91,6 +134,7 @@ function CameraPanel({ camera, faces, color }) {
           <button type="button" className="btn btn-ghost" onClick={camera.savePhoto}>Save photo</button>
         </div>
       )}
+      <NextCue to="step-press">Next: how to press</NextCue>
     </section>
   );
 }
@@ -119,9 +163,9 @@ export default function ProblemDetail({ problem, views, engine, camera, onBack }
       </header>
 
       <div className="detail-grid">
-        <section className="panel diagram-panel" aria-labelledby="where-title">
+        <section className="panel diagram-panel" id="step-where" aria-labelledby="where-title">
           <div className="panel-head">
-            <h2 id="where-title" className="panel-title">Where to press</h2>
+            <h2 id="where-title" className="panel-title">{stepNo(1)}Where to press</h2>
             {views?.length > 0 && (
               <button type="button" className="btn btn-ghost btn-sm"
                 onClick={() => downloadDiagram(diagramRef.current, `Su Jok - ${titleOf(problem).replace(/[\\/]+/g, "-")}.png`)}>
@@ -140,12 +184,13 @@ export default function ProblemDetail({ problem, views, engine, camera, onBack }
           <p className="points-line">
             <strong>{options.length > 1 ? "Points (use either):" : "Point:"}</strong> {options.join("  or  ")}
           </p>
+          <NextCue to="step-camera">Next: find it on your hand</NextCue>
         </section>
 
         <CameraPanel camera={camera} faces={faces} color={problem.color} />
 
-        <section className="panel steps-panel" aria-labelledby="how-title">
-          <h2 id="how-title" className="panel-title">How to press</h2>
+        <section className="panel steps-panel" id="step-press" aria-labelledby="how-title">
+          <h2 id="how-title" className="panel-title">{stepNo(3)}How to press</h2>
           <ol className="steps">
             <li>
               Find the marked spot{sided ? " — use the point on the same side as your pain (right or left)." : " on either hand."}

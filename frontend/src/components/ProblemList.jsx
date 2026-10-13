@@ -1,4 +1,7 @@
 import { useState } from "react";
+import HowItWorks from "./HowItWorks";
+
+const QUICK = ["Su Jok: Headache", "Su Jok: Neck Pain", "Su Jok: Lower Back Pain", "Su Jok: Knee Pain"];
 
 const RESET_PICKS = ["Su Jok: Neck Pain", "Su Jok: Shoulder Pain"];
 
@@ -47,7 +50,7 @@ function groupProblems(problems) {
   return groups.filter((g) => g.items.length);
 }
 
-export default function ProblemList({ problems, loading, onOpen }) {
+export default function ProblemList({ problems, loading, onOpen, onOpenIntro }) {
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState(null);
   const q = query.trim().toLowerCase();
@@ -55,6 +58,7 @@ export default function ProblemList({ problems, loading, onOpen }) {
     ? problems.filter((p) => titleOf(p).toLowerCase().includes(q) || p.description.toLowerCase().includes(q))
     : problems;
   const groups = groupProblems(problems);
+  const quick = QUICK.map((n) => problems.find((p) => p.name === n)).filter(Boolean);
   const resetPick = RESET_PICKS.map((n) => problems.find((p) => p.name === n)).find(Boolean);
 
   function startReset() {
@@ -93,6 +97,21 @@ export default function ProblemList({ problems, loading, onOpen }) {
         <h1>What would you like to ease today?</h1>
         <p className="sub">Explore gentle pressure-point guides for everyday wellbeing.</p>
       </section>
+
+      <HowItWorks onOpenIntro={onOpenIntro} />
+
+      {quick.length > 0 && (
+        <section className="quick" aria-label="Quick start">
+          <h2 className="quick-title">Quick start</h2>
+          <div className="quick-chips">
+            {quick.map((p) => (
+              <button key={p.name} type="button" className="chip" style={{ "--c": p.color }} onClick={() => onOpen(p.name)}>
+                <span className="card-dot" aria-hidden="true" />{titleOf(p)}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="reset-card">
         <h2>Unwind a tense day</h2>
