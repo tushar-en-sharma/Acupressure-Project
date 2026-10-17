@@ -21,6 +21,23 @@ const FLIP_HANDEDNESS = true;
 const MIN_HAND_CONFIDENCE = 0.75;
 const MIN_HANDEDNESS_SCORE = 0.8;
 
+// Shape check: on a real hand the index/middle/ring fingers are about as long
+// as the palm (measured on ~10,700 dataset hands: 1st percentile 0.7-0.8x the
+// wrist-to-middle-knuckle distance). Toes on a foot or an animal paw are far
+// shorter relative to the foot, so low ratios are rejected. Bone lengths are
+// summed (so curled fingers still count) and measured in pixels, not
+// normalised units, so the video's aspect ratio doesn't skew them.
+const MIN_FINGER_PALM_RATIO = 0.65;
+const FINGER_CHAINS = [[5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]];
+
+function looksLikeHand(landmarks, width, height) {
+  const d = (a, b) => Math.hypot((landmarks[a].x - landmarks[b].x) * width, (landmarks[a].y - landmarks[b].y) * height);
+  const palm = d(0, 9);
+  if (!(palm > 0)) return false;
+  const ratios = FINGER_CHAINS.map((c) => (d(c[0], c[1]) + d(c[1], c[2]) + d(c[2], c[3])) / palm);
+  return ratios.reduce((a, b) => a + b, 0) / ratios.length >= MIN_FINGER_PALM_RATIO;
+}
+
 function flip(side) {
   if (side === "Left") return "Right";
   if (side === "Right") return "Left";
@@ -119,6 +136,7 @@ export async function createHandTracker() {
         if (side !== "Left" && side !== "Right") return;
         const score = top?.score ?? 0;
         if (score < MIN_HANDEDNESS_SCORE) return;
+        if (!looksLikeHand(landmarks, video.videoWidth || 1, video.videoHeight || 1)) return;
         found.push({ side, score, landmarks });
       });
       if (found.length === 2 && found[0].side === found[1].side) {

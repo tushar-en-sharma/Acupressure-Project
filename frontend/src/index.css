@@ -312,13 +312,26 @@ h1, h2 { font-family: var(--serif); color: var(--heading); font-weight: 600; }
 .book-buttons .btn { width: 100%; min-height: 50px; font-size: 16px; }
 @media (min-width: 760px) { .book-buttons { grid-template-columns: repeat(3, 1fr); } }
 .wa-float {
-  position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 30;
-  display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 18px; border-radius: 999px;
-  background: #1FA855; color: #fff; font-weight: 700; font-size: 16px; text-decoration: none;
-  box-shadow: 0 10px 24px -8px rgba(23, 143, 71, 0.6); animation: pop 0.5s 0.6s ease both;
+  position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 30; overflow: hidden;
+  display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%; color: #fff; text-decoration: none;
+  /* liquid glass: green-tinted, frosted, with a bright rim and a soft top highlight */
+  background:
+    radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(160deg, rgba(52, 211, 120, 0.78), rgba(23, 143, 71, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(14px) saturate(1.8); backdrop-filter: blur(14px) saturate(1.8);
+  box-shadow:
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.75),
+    inset 0 -6px 10px rgba(10, 90, 45, 0.28),
+    0 8px 20px -6px rgba(23, 143, 71, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.12);
+  animation: pop 0.5s 0.6s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.wa-float:hover { background: #178F47; color: #fff; }
-.app { padding-bottom: 76px; }
+.wa-float svg { filter: drop-shadow(0 1px 1.5px rgba(0, 60, 25, 0.45)); }
+.wa-float:hover, .wa-float:focus-visible { color: #fff; transform: scale(1.06); }
+.wa-float:active { transform: scale(0.95); }
+.app { padding-bottom: 64px; }
 
 /* ── Small phones (360px and below-ish) ───────────────────────────────────── */
 .cam-frame:not(.on) { aspect-ratio: auto; min-height: 240px; display: flex; }
@@ -357,10 +370,10 @@ h1, h2 { font-family: var(--serif); color: var(--heading); font-weight: 600; }
 .cta-bar { position: fixed; left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 29;
   display: flex; justify-content: center; animation: rise 0.3s ease both; }
 .cta-bar .btn { width: 100%; max-width: 420px; gap: 10px; box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35); }
-.has-cta-bar .wa-float { bottom: calc(86px + env(safe-area-inset-bottom)); }
+.has-cta-bar .wa-float { bottom: calc(84px + env(safe-area-inset-bottom)); }
 .has-cta-bar .app { padding-bottom: 150px; }
 .cam-icon { animation: nudge 2.4s ease-in-out infinite; }
-@media (min-width: 960px) { .cta-bar { display: none; } .has-cta-bar .wa-float { bottom: calc(14px + env(safe-area-inset-bottom)); } .has-cta-bar .app { padding-bottom: 76px; } }
+@media (min-width: 960px) { .cta-bar { display: none; } .has-cta-bar .wa-float { bottom: calc(14px + env(safe-area-inset-bottom)); } .has-cta-bar .app { padding-bottom: 64px; } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

@@ -23,7 +23,6 @@ export function WhatsAppFloat({ t, problem, lang }) {
     <a className="wa-float" href={whatsappUrl(t, problem, lang)} target="_blank" rel="noopener"
       aria-label={t.waBook}>
       {Glyph}
-      <span>{t.waBook}</span>
     </a>
   );
 }
