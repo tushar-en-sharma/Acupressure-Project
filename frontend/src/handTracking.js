@@ -15,6 +15,12 @@ const MODEL_PATH = "/mediapipe/models/hand_landmarker.task";
 // test: palm/back was inverted (right hand's palm reported as "back").
 const FLIP_HANDEDNESS = true;
 
+// MediaPipe's default confidence (0.5) is loose enough to accept feet and
+// animal paws as hands. Stricter detection/presence/tracking thresholds, plus
+// a minimum handedness score per detected hand, reject those false positives.
+const MIN_HAND_CONFIDENCE = 0.75;
+const MIN_HANDEDNESS_SCORE = 0.8;
+
 function flip(side) {
   if (side === "Left") return "Right";
   if (side === "Right") return "Left";
@@ -72,6 +78,9 @@ function createLandmarker(vision, delegate) {
     baseOptions: { modelAssetPath: MODEL_PATH, delegate },
     runningMode: "VIDEO",
     numHands: 2,
+    minHandDetectionConfidence: MIN_HAND_CONFIDENCE,
+    minHandPresenceConfidence: MIN_HAND_CONFIDENCE,
+    minTrackingConfidence: MIN_HAND_CONFIDENCE,
   });
 }
 
@@ -108,7 +117,9 @@ export async function createHandTracker() {
         const category = top?.categoryName;
         const side = FLIP_HANDEDNESS ? flip(category) : category;
         if (side !== "Left" && side !== "Right") return;
-        found.push({ side, score: top?.score ?? 0, landmarks });
+        const score = top?.score ?? 0;
+        if (score < MIN_HANDEDNESS_SCORE) return;
+        found.push({ side, score, landmarks });
       });
       if (found.length === 2 && found[0].side === found[1].side) {
         const weaker = found[0].score < found[1].score ? found[0] : found[1];
