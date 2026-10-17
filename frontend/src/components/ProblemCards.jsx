@@ -38,7 +38,7 @@ function groupProblems(problems) {
 export default function ProblemCards({ problems, loading, value, onChange, t, lang }) {
   const groups = groupProblems(problems);
   return (
-    <section className="flow-section" aria-labelledby="pick-title">
+    <section className="flow-section" id="step-choose" aria-labelledby="pick-title">
       <h2 id="pick-title" className="flow-title">
         <span className="step-no" aria-hidden="true">1</span>{t.s1Title}
       </h2>

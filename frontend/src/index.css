@@ -320,6 +320,48 @@ h1, h2 { font-family: var(--serif); color: var(--heading); font-weight: 600; }
 .wa-float:hover { background: #178F47; color: #fff; }
 .app { padding-bottom: 76px; }
 
+/* ── Small phones (360px and below-ish) ───────────────────────────────────── */
+.cam-frame:not(.on) { aspect-ratio: auto; min-height: 240px; display: flex; }
+.cam-frame:not(.on) .cam-off { position: relative; inset: auto; flex: 1; }
+.topbar-row > .brand { min-width: 0; flex: 1 1 auto; }
+.brand-name { min-width: 0; }
+@media (max-width: 480px) {
+  .top-actions { gap: 6px; flex: none; }
+  .lang-switch button { min-width: 40px; padding: 0 8px; }
+  .size-btn { min-width: 40px; padding: 0 8px; }
+  .brand-mark { width: 38px; height: 38px; }
+  .brand-name { font-size: 17px; }
+  .flow-title { font-size: 22px; }
+  .pcard { gap: 8px; padding: 6px 8px; }
+  .pcard-name { font-size: 14px; overflow-wrap: anywhere; }
+  .pcard-dot { width: 12px; height: 12px; }
+}
+@media (max-width: 420px) { .top-book { display: none; } .try-cta, .cta-bar .btn { padding-inline: 14px; font-size: 17px; gap: 8px; } }
+@media (max-width: 360px) { .try-arrow { display: none; } }
+
+/* ── Guide to step 3 ──────────────────────────────────────────────────────── */
+#step-see, #step-try, #step-choose { scroll-margin-top: 130px; }
+.progress { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.progress li { flex: 1; min-width: 0; }
+.progress button { width: 100%; min-height: 36px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 6px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface);
+  color: var(--muted); font: 700 14px var(--sans); cursor: pointer; white-space: nowrap; }
+.progress button:disabled { cursor: default; opacity: 0.7; }
+.progress .pn { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface-2); font-size: 12px; }
+.progress .now button { border-color: var(--gold); color: var(--heading); background: var(--surface-2); }
+.progress .now .pn, .progress .done .pn { background: var(--accent); color: var(--accent-ink); }
+.try-cta { width: 100%; margin-top: 14px; gap: 10px; background: var(--c, var(--accent)); animation: nudge 2.4s 1.5s ease-in-out infinite; }
+.try-arrow { font-size: 22px; }
+@keyframes nudge { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-4px) scale(1.02); } 90% { transform: translateY(1px); } }
+.cta-bar { position: fixed; left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 29;
+  display: flex; justify-content: center; animation: rise 0.3s ease both; }
+.cta-bar .btn { width: 100%; max-width: 420px; gap: 10px; box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.35); }
+.has-cta-bar .wa-float { bottom: calc(86px + env(safe-area-inset-bottom)); }
+.has-cta-bar .app { padding-bottom: 150px; }
+.cam-icon { animation: nudge 2.4s ease-in-out infinite; }
+@media (min-width: 960px) { .cta-bar { display: none; } .has-cta-bar .wa-float { bottom: calc(14px + env(safe-area-inset-bottom)); } .has-cta-bar .app { padding-bottom: 76px; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reset-art path { stroke-dashoffset: 0 !important; }

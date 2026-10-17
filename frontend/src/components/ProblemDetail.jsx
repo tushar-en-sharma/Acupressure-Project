@@ -42,7 +42,7 @@ function CameraPanel({ camera, faces, color, t, hasProblem }) {
     : undefined;
 
   return (
-    <section className="flow-section camera-panel" aria-labelledby="cam-title">
+    <section className="flow-section camera-panel" id="step-try" aria-labelledby="cam-title">
       <h2 id="cam-title" className="flow-title">{stepNo(3)}{t.s3Title}</h2>
       <p className="flow-sub">{t.s3Sub}</p>
 
@@ -66,7 +66,7 @@ function CameraPanel({ camera, faces, color, t, hasProblem }) {
         <canvas ref={canvasRef} />
         {!running && (
           <div className="cam-off">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg className="cam-icon" viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M3 7h3l1.5-2h9L18 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" strokeLinejoin="round" />
               <circle cx="12" cy="13" r="3.5" />
             </svg>
@@ -100,6 +100,7 @@ function CameraPanel({ camera, faces, color, t, hasProblem }) {
 
 export default function ProblemDetail({ problem, views, engine, camera, t, lang }) {
   const diagramRef = useRef(null);
+  const [showBar, setShowBar] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const faces = requiredFaces(problem, engine);
   const protocols = problem?.protocols || [];
@@ -115,6 +116,35 @@ export default function ProblemDetail({ problem, views, engine, camera, t, lang 
     window.speechSynthesis?.cancel();
     setSpeaking(false);
   }, [problem?.name, lang]);
+
+  // Floating "Try it on your hand" bar: shown while the picture is on screen
+  // and the camera section is not, so the next step is always one tap away.
+  useEffect(() => {
+    if (!problem || camera.running || typeof IntersectionObserver === "undefined") {
+      setShowBar(false);
+      return;
+    }
+    const seen = { see: false, cam: false };
+    const update = () => setShowBar(seen.see && !seen.cam);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { seen[e.target.id === "step-see" ? "see" : "cam"] = e.isIntersecting; });
+      update();
+    });
+    ["step-see", "step-try"].forEach((id) => { const el = document.getElementById(id); if (el) io.observe(el); });
+    return () => io.disconnect();
+  }, [problem?.name, camera.running]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("has-cta-bar", showBar);
+    return () => document.documentElement.classList.remove("has-cta-bar");
+  }, [showBar]);
+
+  const handIcon = (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 7h3l1.5-2h9L18 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  );
 
   function toggleSpeech() {
     const synth = window.speechSynthesis;
@@ -151,6 +181,11 @@ export default function ProblemDetail({ problem, views, engine, camera, t, lang 
             <strong>{options.length > 1 ? t.pointsEither : t.point}</strong> {options.join("  or  ")}
           </p>
         )}
+        {problem && views?.length > 0 && (
+          <button type="button" className="btn btn-primary btn-lg try-cta" onClick={camera.tryNow} style={{ "--c": problem.color }}>
+            {handIcon}{t.tryCta}<span className="try-arrow" aria-hidden="true">↓</span>
+          </button>
+        )}
         <div className="row-actions">
           {canSpeak && (
             <button type="button" className="btn btn-ghost" onClick={toggleSpeech} aria-pressed={speaking}>
@@ -168,6 +203,14 @@ export default function ProblemDetail({ problem, views, engine, camera, t, lang 
           )}
         </div>
       </section>
+
+      {showBar && (
+        <div className="cta-bar">
+          <button type="button" className="btn btn-primary btn-lg" onClick={camera.tryNow}>
+            {handIcon}{t.tryCta}
+          </button>
+        </div>
+      )}
 
       <CameraPanel camera={camera} faces={faces} color={problem?.color} t={t} hasProblem={!!problem} />
 

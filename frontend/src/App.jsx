@@ -282,6 +282,11 @@ export default function App() {
     mirrored,
     chooseCamera,
     start: () => startCamera(facing),
+    // One tap from the diagram: bring the camera into view and switch it on.
+    tryNow: () => {
+      document.getElementById("step-try")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!running && !starting) startCamera(facing);
+    },
     stop: stopCamera,
     savePhoto,
   };
@@ -306,6 +311,22 @@ export default function App() {
             <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener">{t.book}</a>
           </div>
         </div>
+        <ol className="progress" aria-label={`${t.stepChoose} / ${t.stepSee} / ${t.stepTry}`}>
+          {[
+            [t.stepChoose, () => document.getElementById("step-choose")?.scrollIntoView({ behavior: "smooth", block: "start" })],
+            [t.stepSee, () => problem && document.getElementById("step-see")?.scrollIntoView({ behavior: "smooth", block: "start" })],
+            [t.stepTry, () => problem && camera.tryNow()],
+          ].map(([label, go], i) => {
+            const cur = running ? 3 : problem ? 2 : 1;
+            return (
+              <li key={i} className={i + 1 === cur ? "now" : i + 1 < cur ? "done" : ""}>
+                <button type="button" onClick={go} aria-current={i + 1 === cur ? "step" : undefined} disabled={i > 0 && !problem}>
+                  <span className="pn" aria-hidden="true">{i + 1 < cur ? "✓" : i + 1}</span>{label}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
       </header>
 
       <main className="main">
