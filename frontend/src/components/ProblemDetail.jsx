@@ -169,6 +169,11 @@ export default function ProblemDetail({ problem, views, engine, camera, t, lang 
           <h2 id="where-title" className="flow-title">{stepNo(2)}{t.s2Title}</h2>
         </div>
         <p className="flow-sub">{problem ? <><strong>{title}</strong> &middot; {t.s2Sub}</> : t.s2Sub}</p>
+        {problem && views?.length > 0 && (
+          <button type="button" className="btn btn-primary btn-lg try-cta" onClick={camera.tryNow} style={{ "--c": problem.color }}>
+            {handIcon}{t.tryCta}<span className="try-arrow" aria-hidden="true">↓</span>
+          </button>
+        )}
         {!problem ? (
           <div className="diagram-empty">{t.placeholder}</div>
         ) : views?.length > 0 ? (
@@ -180,11 +185,6 @@ export default function ProblemDetail({ problem, views, engine, camera, t, lang 
           <p className="points-line">
             <strong>{options.length > 1 ? t.pointsEither : t.point}</strong> {options.join("  or  ")}
           </p>
-        )}
-        {problem && views?.length > 0 && (
-          <button type="button" className="btn btn-primary btn-lg try-cta" onClick={camera.tryNow} style={{ "--c": problem.color }}>
-            {handIcon}{t.tryCta}<span className="try-arrow" aria-hidden="true">↓</span>
-          </button>
         )}
         <div className="row-actions">
           {canSpeak && (
