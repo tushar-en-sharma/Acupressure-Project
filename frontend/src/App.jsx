@@ -12,7 +12,8 @@ import CameraStage from "./components/CameraStage";
 import { IconBody, IconHand, IconCamera, IconList, IconNext } from "./components/Icons";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
-import { track, problemKey, areaOf, deviceType } from "./analytics";
+import { track, problemKey, areaOf, deviceType, getConsent, setConsent, initAnalytics } from "./analytics";
+import ConsentBar from "./components/ConsentBar";
 
 // Which point systems the app offers. Classical acupressure is hidden for
 // now — add "hand_acupoint" / "hand_reflex" back here to show it again.
@@ -53,6 +54,7 @@ export default function App() {
   const [camStage, setCamStage] = useState(false);
   const [listMode, setListMode] = useState(true);
   const [webglFailed, setWebglFailed] = useState(false);
+  const [consent, setConsentState] = useState(getConsent);
 
   const [running, setRunning] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -107,6 +109,15 @@ export default function App() {
     }
   }, [large]);
 
+  function chooseConsent(value) {
+    setConsent(value);
+    setConsentState(value);
+    if (value === "yes") {
+      track("app_open", { lang, large_text: large ? 1 : 0, input: deviceType(), deep_link: problemFromUrl() ? 1 : 0 });
+      track("stage_view", { stage, problem: problemKey(selected) });
+    }
+  }
+
   function loadInfo() {
     setLoadError(false);
     fetchInfo()
@@ -119,6 +130,7 @@ export default function App() {
   }
 
   useEffect(() => {
+    initAnalytics();
     track("app_open", { lang, large_text: large ? 1 : 0, input: deviceType(), deep_link: problemFromUrl() ? 1 : 0 });
     loadInfo();
     // The phone's back button returns from a problem to the list.
@@ -406,6 +418,7 @@ export default function App() {
         )}
       </main>
 
+      {consent === null && <ConsentBar t={t} onChoose={chooseConsent} />}
       {!problem && <SiteFooter t={t} />}
       <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem}
         onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />

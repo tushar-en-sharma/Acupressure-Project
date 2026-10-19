@@ -1,0 +1,95 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - button "Home" [ref=e6] [cursor=pointer]:
+        - generic [ref=e7]: Revive Acupressure App
+      - generic [ref=e8]:
+        - group "Language" [ref=e9]:
+          - button "हिंदी" [ref=e10] [cursor=pointer]
+          - button "EN" [pressed] [ref=e11] [cursor=pointer]
+        - button "Larger text" [ref=e12] [cursor=pointer]: AA
+    - list "Choose / See / Try" [ref=e13]:
+      - listitem [ref=e14]:
+        - button "Choose" [ref=e15] [cursor=pointer]
+      - listitem [ref=e19]:
+        - button "See" [disabled] [ref=e20]
+      - listitem [ref=e23]:
+        - button "Try" [disabled] [ref=e24]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - heading "Find the right spot on your hand" [level=1] [ref=e30]
+      - region "What is troubling you?" [ref=e31]:
+        - region [ref=e32]:
+          - heading "What is troubling you?" [level=2] [ref=e33]:
+            - generic [aria-hidden] [ref=e34]: "1"
+            - text: What is troubling you?
+          - paragraph [ref=e35]: Tap one problem option below.
+          - generic "Loading" [ref=e36]
+        - button "Show the body" [ref=e45] [cursor=pointer]
+      - region [ref=e49]:
+        - heading "Want personal guidance?" [level=2] [ref=e50]
+        - paragraph [ref=e51]: Book an appointment at Revive, Vasundhara, Ghaziabad, or consult online.
+        - generic [ref=e52]:
+          - link "Book on WhatsApp" [ref=e53] [cursor=pointer]:
+            - /url: https://wa.me/919811149492?text=Hello%20Revive%2C%20I%20would%20like%20to%20book%20an%20appointment.
+          - link "Call +91 9811149492" [ref=e57] [cursor=pointer]:
+            - /url: tel:+919811149492
+          - link "Book on our website" [ref=e58] [cursor=pointer]:
+            - /url: https://www.therevivecentre.com/book
+  - dialog "Allow anonymous usage statistics to improve this app?" [ref=e59]:
+    - paragraph [ref=e63]:
+      - text: Allow anonymous usage statistics to improve this app?
+      - link "Details" [ref=e64] [cursor=pointer]:
+        - /url: https://www.therevivecentre.com/privacy-policy
+    - generic [ref=e65]:
+      - button "Allow" [ref=e66] [cursor=pointer]
+      - button "No thanks" [ref=e67] [cursor=pointer]
+  - contentinfo [ref=e68]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - link "Revive A Beauty & Health Centre" [ref=e71] [cursor=pointer]:
+          - /url: https://www.therevivecentre.com
+          - generic [ref=e72]:
+            - text: Revive
+            - generic [ref=e73]: A Beauty & Health Centre
+        - paragraph [ref=e74]: Individualised assessment and complementary wellness care.
+      - navigation "Revive website" [ref=e75]:
+        - heading "Revive website" [level=3] [ref=e76]
+        - list [ref=e77]:
+          - listitem [ref=e78]:
+            - link "Main website" [ref=e79] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com
+          - listitem [ref=e80]:
+            - link "Our services" [ref=e81] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/services
+          - listitem [ref=e82]:
+            - link "Book an appointment" [ref=e83] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/book
+          - listitem [ref=e84]:
+            - link "Contact" [ref=e85] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/contact
+      - generic [ref=e86]:
+        - heading "Visit us" [level=3] [ref=e87]
+        - list [ref=e88]:
+          - listitem [ref=e89]: 15/1130, Vasundhara, Ghaziabad (201012)
+          - listitem [ref=e90]: Monday–Sunday, 11:00AM – 8:00PM
+          - listitem [ref=e91]:
+            - link "+91 9811149492" [ref=e92] [cursor=pointer]:
+              - /url: tel:+919811149492
+          - listitem [ref=e93]:
+            - link "sonia@therevivecentre.com" [ref=e94] [cursor=pointer]:
+              - /url: mailto:sonia@therevivecentre.com
+          - listitem [ref=e95]: In-person & online consultations
+          - listitem [ref=e96]:
+            - link "Get directions" [ref=e97] [cursor=pointer]:
+              - /url: https://maps.app.goo.gl/fKeqWrFdfmVX4mzo6
+    - paragraph [ref=e98]: For general wellness only. Not a substitute for medical advice. See a doctor for severe, sudden or lasting pain.
+    - paragraph [ref=e99]:
+      - link "Privacy" [ref=e100] [cursor=pointer]:
+        - /url: https://www.therevivecentre.com/privacy-policy
+      - text: ·
+      - link "Terms" [ref=e101] [cursor=pointer]:
+        - /url: https://www.therevivecentre.com/terms
+      - text: · © 2026 Revive
+  - link "Book on WhatsApp":
+    - /url: https://wa.me/919811149492?text=Hello%20Revive%2C%20I%20would%20like%20to%20book%20an%20appointment.

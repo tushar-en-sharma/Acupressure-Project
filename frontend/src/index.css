@@ -481,3 +481,9 @@ h1, h2 { font-family: var(--serif); color: var(--heading); font-weight: 600; }
 
 p, li { text-wrap: pretty; }
 h1, h2, h3 { text-wrap: balance; }
+
+/* consent prompt */
+.consent-bar { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); width: min(94vw, 560px); z-index: 80; display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; padding: 14px 16px; border-radius: 20px; background: #fff; box-shadow: 0 16px 40px -12px rgba(59, 45, 46, 0.5); animation: bar-in 0.3s ease both; }
+.consent-bar p { font-size: 15px; line-height: 1.4; }
+.consent-btns { grid-column: 1 / -1; display: flex; gap: 10px; }
+.consent-btns .btn { flex: 1; min-height: 46px; }
