@@ -1,0 +1,117 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - button "Home" [ref=e6] [cursor=pointer]:
+        - generic [ref=e7]: Revive Acupressure App
+      - generic [ref=e8]:
+        - group "Language" [ref=e9]:
+          - button "हिंदी" [ref=e10] [cursor=pointer]
+          - button "EN" [pressed] [ref=e11] [cursor=pointer]
+        - button "Larger text" [ref=e12] [cursor=pointer]: AA
+    - list "Choose / See / Try" [ref=e13]:
+      - listitem [ref=e14]:
+        - button "Choose" [ref=e15] [cursor=pointer]
+      - listitem [ref=e19]:
+        - button "See" [disabled] [ref=e20]
+      - listitem [ref=e23]:
+        - button "Try" [disabled] [ref=e24]
+  - main [ref=e28]:
+    - generic [ref=e29]:
+      - heading "Find the right spot on your hand" [level=1] [ref=e30]
+      - region "What is troubling you?" [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33] [cursor=pointer]
+          - button "Turn the body round" [ref=e35] [cursor=pointer]
+        - button "Show as a list" [ref=e39] [cursor=pointer]
+        - list [ref=e42]:
+          - listitem [ref=e43]:
+            - button "Headache" [ref=e44]
+          - listitem [ref=e45]:
+            - button "Sore Throat" [ref=e46]
+          - listitem [ref=e47]:
+            - button "Neck Pain" [ref=e48]
+          - listitem [ref=e49]:
+            - button "Cough / Bronchitis" [ref=e50]
+          - listitem [ref=e51]:
+            - button "Palpitations" [ref=e52]
+          - listitem [ref=e53]:
+            - button "Acidity / Indigestion" [ref=e54]
+          - listitem [ref=e55]:
+            - button "Constipation" [ref=e56]
+          - listitem [ref=e57]:
+            - button "Menstrual / Bladder Discomfort" [ref=e58]
+          - listitem [ref=e59]:
+            - button "Upper Back Pain" [ref=e60]
+          - listitem [ref=e61]:
+            - button "Lower Back Pain" [ref=e62]
+          - listitem [ref=e63]:
+            - button "Shoulder Pain" [ref=e64]
+          - listitem [ref=e65]:
+            - button "Elbow Pain" [ref=e66]
+          - listitem [ref=e67]:
+            - button "Wrist Pain" [ref=e68]
+          - listitem [ref=e69]:
+            - button "Hip Pain" [ref=e70]
+          - listitem [ref=e71]:
+            - button "Knee Pain" [ref=e72]
+          - listitem [ref=e73]:
+            - button "Ankle Sprain" [ref=e74]
+      - region [ref=e75]:
+        - heading "Want personal guidance?" [level=2] [ref=e76]
+        - paragraph [ref=e77]: Book an appointment at Revive, Vasundhara, Ghaziabad, or consult online.
+        - generic [ref=e78]:
+          - link "Book on WhatsApp" [ref=e79] [cursor=pointer]:
+            - /url: https://wa.me/919811149492?text=Hello%20Revive%2C%20I%20would%20like%20to%20book%20an%20appointment.
+          - link "Call +91 9811149492" [ref=e83] [cursor=pointer]:
+            - /url: tel:+919811149492
+          - link "Book on our website" [ref=e84] [cursor=pointer]:
+            - /url: https://www.therevivecentre.com/book
+  - contentinfo [ref=e85]:
+    - generic [ref=e86]:
+      - generic [ref=e87]:
+        - link "Revive A Beauty & Health Centre" [ref=e88] [cursor=pointer]:
+          - /url: https://www.therevivecentre.com
+          - generic [ref=e89]:
+            - text: Revive
+            - generic [ref=e90]: A Beauty & Health Centre
+        - paragraph [ref=e91]: Individualised assessment and complementary wellness care.
+      - navigation "Revive website" [ref=e92]:
+        - heading "Revive website" [level=3] [ref=e93]
+        - list [ref=e94]:
+          - listitem [ref=e95]:
+            - link "Main website" [ref=e96] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com
+          - listitem [ref=e97]:
+            - link "Our services" [ref=e98] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/services
+          - listitem [ref=e99]:
+            - link "Book an appointment" [ref=e100] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/book
+          - listitem [ref=e101]:
+            - link "Contact" [ref=e102] [cursor=pointer]:
+              - /url: https://www.therevivecentre.com/contact
+      - generic [ref=e103]:
+        - heading "Visit us" [level=3] [ref=e104]
+        - list [ref=e105]:
+          - listitem [ref=e106]: 15/1130, Vasundhara, Ghaziabad (201012)
+          - listitem [ref=e107]: Monday–Sunday, 11:00AM – 8:00PM
+          - listitem [ref=e108]:
+            - link "+91 9811149492" [ref=e109] [cursor=pointer]:
+              - /url: tel:+919811149492
+          - listitem [ref=e110]:
+            - link "sonia@therevivecentre.com" [ref=e111] [cursor=pointer]:
+              - /url: mailto:sonia@therevivecentre.com
+          - listitem [ref=e112]: In-person & online consultations
+          - listitem [ref=e113]:
+            - link "Get directions" [ref=e114] [cursor=pointer]:
+              - /url: https://maps.app.goo.gl/fKeqWrFdfmVX4mzo6
+    - paragraph [ref=e115]: For general wellness only. Not a substitute for medical advice. See a doctor for severe, sudden or lasting pain.
+    - paragraph [ref=e116]:
+      - link "Privacy" [ref=e117] [cursor=pointer]:
+        - /url: https://www.therevivecentre.com/privacy-policy
+      - text: ·
+      - link "Terms" [ref=e118] [cursor=pointer]:
+        - /url: https://www.therevivecentre.com/terms
+      - text: · © 2026 Revive
+  - link "Book on WhatsApp" [ref=e119] [cursor=pointer]:
+    - /url: https://wa.me/919811149492?text=Hello%20Revive%2C%20I%20would%20like%20to%20book%20an%20appointment.

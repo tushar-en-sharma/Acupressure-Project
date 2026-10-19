@@ -5,10 +5,14 @@ import { createHandTracker } from "./handTracking";
 import { drawOverlay } from "./overlay";
 import ProblemCards from "./components/ProblemCards";
 import { WhatsAppFloat, BookAppointment } from "./components/WhatsAppBook";
-import { STRINGS } from "./i18n";
-import ProblemDetail from "./components/ProblemDetail";
+import { STRINGS, problemTitle } from "./i18n";
+import BodyPicker from "./components/BodyPicker";
+import SeeStage from "./components/SeeStage";
+import CameraStage from "./components/CameraStage";
+import { IconBody, IconHand, IconCamera, IconList, IconNext } from "./components/Icons";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
+import { track, problemKey, areaOf, deviceType } from "./analytics";
 
 // Which point systems the app offers. Classical acupressure is hidden for
 // now — add "hand_acupoint" / "hand_reflex" back here to show it again.
@@ -44,6 +48,11 @@ export default function App() {
   const [engine, setEngine] = useState(null);
   const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState(problemFromUrl);
+  // Tapped on the body but not yet confirmed with the arrow button.
+  const [pending, setPending] = useState(problemFromUrl);
+  const [camStage, setCamStage] = useState(false);
+  const [listMode, setListMode] = useState(true);
+  const [webglFailed, setWebglFailed] = useState(false);
 
   const [running, setRunning] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -66,6 +75,12 @@ export default function App() {
   const lastVideoTimeRef = useRef(-1);
   const lastUiRef = useRef("");
   const mirroredRef = useRef(true);
+  const camT0Ref = useRef(0);
+  const handSeenRef = useRef(false);
+  const foundRef = useRef(false);
+
+  const stage = camStage && selected ? "camera" : selected ? "see" : "pick";
+  useEffect(() => { track("stage_view", { stage, problem: problemKey(selected) }); }, [stage, selected]);
 
   const visibleProblems = problems.filter((p) => VISIBLE_SYSTEMS.has(p.system));
   const problem = visibleProblems.find((p) => p.name === selected) || null;
@@ -104,9 +119,10 @@ export default function App() {
   }
 
   useEffect(() => {
+    track("app_open", { lang, large_text: large ? 1 : 0, input: deviceType(), deep_link: problemFromUrl() ? 1 : 0 });
     loadInfo();
     // The phone's back button returns from a problem to the list.
-    const onPop = () => setSelected(problemFromUrl());
+    const onPop = () => { setSelected(problemFromUrl()); setPending(problemFromUrl()); setCamStage(false); };
     window.addEventListener("popstate", onPop);
     return () => {
       window.removeEventListener("popstate", onPop);
@@ -117,25 +133,17 @@ export default function App() {
 
   // The dropdown. An empty value clears the choice (and turns the camera off).
   function chooseProblem(name) {
+    if (name) track("problem_selected", { problem: problemKey(name), area: areaOf(name), method: listMode ? "list" : "body" });
     const url = name ? `?problem=${encodeURIComponent(name)}` : window.location.pathname;
     window.history.pushState({}, "", url);
     setSelected(name || null);
+    setCamStage(false);
+    window.scrollTo(0, 0);
   }
-
-  // After picking a problem, bring the "where to press" picture into view.
-  useEffect(() => {
-    if (!problem) return;
-    const id = requestAnimationFrame(() =>
-      document.getElementById("step-see")?.scrollIntoView({ behavior: "smooth", block: "start" })
-    );
-    return () => cancelAnimationFrame(id);
-    // only when the chosen problem changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [problem?.name]);
 
   // Leaving a problem (including via the back button) turns the camera off.
   useEffect(() => {
-    if (!selected) stopCamera();
+    if (!selected) { stopCamera(); setCamStage(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
@@ -156,6 +164,15 @@ export default function App() {
         target ? [target] : []
       );
       const status = state.problems[0];
+      const secs = Math.round((performance.now() - camT0Ref.current) / 1000);
+      if (!handSeenRef.current && state.hands.length) {
+        handSeenRef.current = true;
+        track("hand_seen", { problem: problemKey(target?.name), seconds: secs });
+      }
+      if (!foundRef.current && status?.complete) {
+        foundRef.current = true;
+        track("point_found", { problem: problemKey(target?.name), area: areaOf(target?.name), seconds: secs });
+      }
       // Draw every point of every option for this problem (e.g. both
       // shoulders, palm and back-of-head), on every hand where it shows.
       const wanted = new Set((target?.protocols || []).flatMap((pr) => pr.points));
@@ -208,11 +225,16 @@ export default function App() {
       lastVideoTimeRef.current = -1;
       lastUiRef.current = "";
       setRunning(true);
+      camT0Ref.current = performance.now();
+      handSeenRef.current = false;
+      foundRef.current = false;
+      track("camera_started", { facing: want, problem: problemKey(problemRef.current?.name) });
       rafRef.current = requestAnimationFrame(detectionLoop);
       if (want === "environment" && !isBack) {
         setCameraError("No back camera found on this device, so the front camera is being used.");
       }
     } catch (err) {
+      track(err?.name === "NotAllowedError" ? "camera_denied" : "camera_error", { reason: err?.name || "unknown" });
       setCameraError(
         err?.name === "NotAllowedError"
           ? "Camera access was blocked. Allow the camera for this site in your browser settings, then try again."
@@ -242,6 +264,7 @@ export default function App() {
       return;
     }
     if (want === facing) return;
+    track("camera_flip", { to: want });
     stopCamera();
     await startCamera(want);
   }
@@ -249,6 +272,7 @@ export default function App() {
   function savePhoto() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
+    track("photo_saved", { problem: problemKey(problemRef.current?.name), found: foundRef.current ? 1 : 0 });
     const out = document.createElement("canvas");
     out.width = video.videoWidth;
     out.height = video.videoHeight;
@@ -284,7 +308,8 @@ export default function App() {
     start: () => startCamera(facing),
     // One tap from the diagram: bring the camera into view and switch it on.
     tryNow: () => {
-      document.getElementById("step-try")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      track("camera_tap", { problem: problemKey(problemRef.current?.name) });
+      setCamStage(true);
       if (!running && !starting) startCamera(facing);
     },
     stop: stopCamera,
@@ -301,27 +326,27 @@ export default function App() {
           </button>
           <div className="top-actions">
             <div className="lang-switch" role="group" aria-label="Language">
-              <button type="button" className={lang === "hi" ? "on" : ""} aria-pressed={lang === "hi"} onClick={() => setLang("hi")}>हिंदी</button>
-              <button type="button" className={lang === "en" ? "on" : ""} aria-pressed={lang === "en"} onClick={() => setLang("en")}>EN</button>
+              <button type="button" className={lang === "hi" ? "on" : ""} aria-pressed={lang === "hi"} onClick={() => { setLang("hi"); track("language_changed", { to: "hi" }); }}>हिंदी</button>
+              <button type="button" className={lang === "en" ? "on" : ""} aria-pressed={lang === "en"} onClick={() => { setLang("en"); track("language_changed", { to: "en" }); }}>EN</button>
             </div>
             <button type="button" className={`size-btn${large ? " on" : ""}`} aria-pressed={large}
-              onClick={() => setLarge((v) => !v)} title={large ? t.normal : t.bigger} aria-label={large ? t.normal : t.bigger}>
+              onClick={() => { track("large_text_toggled", { on: large ? 0 : 1 }); setLarge((v) => !v); }} title={large ? t.normal : t.bigger} aria-label={large ? t.normal : t.bigger}>
               A<span>A</span>
             </button>
-            <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener">{t.book}</a>
+            <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener" onClick={() => track("book_click", { channel: "top_button" })}>{t.book}</a>
           </div>
         </div>
-        <ol className="progress" aria-label={`${t.stepChoose} / ${t.stepSee} / ${t.stepTry}`}>
+        <ol className="steps3" aria-label={`${t.stepChoose} / ${t.stepSee} / ${t.stepTry}`}>
           {[
-            [t.stepChoose, () => document.getElementById("step-choose")?.scrollIntoView({ behavior: "smooth", block: "start" })],
-            [t.stepSee, () => problem && document.getElementById("step-see")?.scrollIntoView({ behavior: "smooth", block: "start" })],
-            [t.stepTry, () => problem && camera.tryNow()],
-          ].map(([label, go], i) => {
-            const cur = running ? 3 : problem ? 2 : 1;
+            [IconBody, t.stepChoose, () => chooseProblem("")],
+            [IconHand, t.stepSee, () => problem && chooseProblem(problem.name)],
+            [IconCamera, t.stepTry, () => problem && camera.tryNow()],
+          ].map(([Ico, label, go], i) => {
+            const cur = camStage ? 3 : problem ? 2 : 1;
             return (
               <li key={i} className={i + 1 === cur ? "now" : i + 1 < cur ? "done" : ""}>
-                <button type="button" onClick={go} aria-current={i + 1 === cur ? "step" : undefined} disabled={i > 0 && !problem}>
-                  <span className="pn" aria-hidden="true">{i + 1 < cur ? "✓" : i + 1}</span>{label}
+                <button type="button" onClick={go} aria-label={label} aria-current={i + 1 === cur ? "step" : undefined} disabled={i > 0 && !problem}>
+                  <Ico size={22} />
                 </button>
               </li>
             );
@@ -337,25 +362,53 @@ export default function App() {
           </div>
         ) : (
           <div className="flow">
-            <div className="hero-copy">
-              <h1>{t.heroTitle}</h1>
-              <p>{t.heroSub}</p>
-            </div>
-            <ProblemCards
-              problems={visibleProblems}
-              loading={!problems.length}
-              value={problem ? problem.name : ""}
-              onChange={chooseProblem}
-              t={t}
-              lang={lang}
-            />
-            <ProblemDetail problem={problem} views={referenceViews} engine={engine} camera={camera} t={t} lang={lang} />
-            <BookAppointment t={t} problem={problem} lang={lang} />
+            <h1 className="sr-only">{t.heroTitle}</h1>
+            {!problem && (
+              <section className="pick" aria-label={t.s1Title}>
+                {listMode || webglFailed ? (
+                  <ProblemCards problems={visibleProblems} loading={!problems.length} value={pending || ""}
+                    onChange={chooseProblem} t={t} lang={lang} />
+                ) : (
+                  <BodyPicker problems={visibleProblems} value={pending} onChange={setPending}
+                    onUnsupported={() => setWebglFailed(true)} flipLabel={t.flipBody} />
+                )}
+                {!webglFailed && (
+                  <button type="button" className={`round-btn list-toggle${listMode ? " in-list" : ""}`} onClick={() => { track("view_toggled", { to: listMode ? "body" : "list" }); setListMode((v) => !v); }}
+                    aria-label={listMode ? t.bodyView : t.listView} title={listMode ? t.bodyView : t.listView}>
+                    {listMode ? <IconBody /> : <IconList />}
+                  </button>
+                )}
+                {!listMode && !webglFailed && (
+                  <ul className="sr-only">
+                    {visibleProblems.map((p) => (
+                      <li key={p.name}><button type="button" onClick={() => chooseProblem(p.name)}>{problemTitle(p, lang)}</button></li>
+                    ))}
+                  </ul>
+                )}
+                {pending && !listMode && (() => {
+                  const chosen = visibleProblems.find((p) => p.name === pending);
+                  return chosen ? (
+                    <div className="pick-bar" style={{ "--c": chosen.color }}>
+                      <span className="see-dot" aria-hidden="true" />
+                      <strong>{problemTitle(chosen, lang)}</strong>
+                      <button type="button" className="go-btn" onClick={() => chooseProblem(pending)} aria-label={t.next}><IconNext size={28} /></button>
+                    </div>
+                  ) : null;
+                })()}
+              </section>
+            )}
+            {problem && (
+              <SeeStage problem={problem} views={referenceViews} onTry={camera.tryNow}
+                onBack={() => chooseProblem("")} t={t} lang={lang} />
+            )}
+            {!problem && <BookAppointment t={t} problem={null} lang={lang} />}
           </div>
         )}
       </main>
 
-      <SiteFooter t={t} />
+      {!problem && <SiteFooter t={t} />}
+      <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem}
+        onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />
       <WhatsAppFloat t={t} problem={problem} lang={lang} />
     </div>
   );

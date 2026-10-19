@@ -1,5 +1,6 @@
 import site from "../site";
 import { problemTitle } from "../i18n";
+import { track, problemKey } from "../analytics";
 
 const Glyph = (
   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -21,7 +22,7 @@ function whatsappUrl(t, problem, lang) {
 export function WhatsAppFloat({ t, problem, lang }) {
   return (
     <a className="wa-float" href={whatsappUrl(t, problem, lang)} target="_blank" rel="noopener"
-      aria-label={t.waBook}>
+      aria-label={t.waBook} onClick={() => track("book_click", { channel: "whatsapp_float", problem: problemKey(problem?.name) })}>
       {Glyph}
     </a>
   );
@@ -34,13 +35,13 @@ export function BookAppointment({ t, problem, lang }) {
       <h2 id="book-title" className="flow-title">{t.bookTitle}</h2>
       <p className="flow-sub">{t.bookSub}</p>
       <div className="book-buttons">
-        <a className="btn btn-wa btn-lg" href={whatsappUrl(t, problem, lang)} target="_blank" rel="noopener">
+        <a className="btn btn-wa btn-lg" href={whatsappUrl(t, problem, lang)} target="_blank" rel="noopener" onClick={() => track("book_click", { channel: "whatsapp", problem: problemKey(problem?.name) })}>
           {Glyph}{t.waBook}
         </a>
-        <a className="btn btn-ghost btn-lg" href={`tel:${site.phoneTel}`}>
+        <a className="btn btn-ghost btn-lg" href={`tel:${site.phoneTel}`} onClick={() => track("book_click", { channel: "call" })}>
           {t.call} {site.phoneDisplay}
         </a>
-        <a className="btn btn-ghost" href={site.bookUrl} target="_blank" rel="noopener">{t.bookOnline}</a>
+        <a className="btn btn-ghost" href={site.bookUrl} target="_blank" rel="noopener" onClick={() => track("book_click", { channel: "website" })}>{t.bookOnline}</a>
       </div>
     </section>
   );
