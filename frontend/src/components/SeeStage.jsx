@@ -95,8 +95,7 @@ export default function SeeStage({ problem, views, onTry, onBack, onPrivacy, t, 
         </button>
       </div>
 
-      <p className="trust-line"><IconLock size={16} /><span>{t.trustLine}</span></p>
-      <button type="button" className="no-cam" onClick={skipCamera}>{t.noCamera}</button>
+      <p className="trust-line"><IconLock size={13} /><span>{t.trustLine}</span></p>
 
       <div className="tilt-card" onPointerMove={tiltMove} onPointerLeave={tiltReset}>
         {views?.length > 0

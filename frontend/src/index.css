@@ -643,3 +643,6 @@ h1, h2, h3 { text-wrap: balance; }
 .live-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 6px; max-width: calc(100vw - 28px); color: #fff; font-size: 11px; line-height: 1.3; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
 .live-note .live-dot { width: 7px; height: 7px; }
 .live-note .live-info { font-size: 11px; min-height: 28px; padding: 4px 2px; }
+
+/* Smaller trust line, tucked close to the picture */
+.trust-line { font-size: 12px; margin: -4px 0 -12px; }
