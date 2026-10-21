@@ -18,8 +18,13 @@ const FLIP_HANDEDNESS = true;
 // MediaPipe's default confidence (0.5) is loose enough to accept feet and
 // animal paws as hands. Stricter detection/presence/tracking thresholds, plus
 // a minimum handedness score per detected hand, reject those false positives.
-const MIN_HAND_CONFIDENCE = 0.75;
+const MIN_HAND_CONFIDENCE = 0.6;
 const MIN_HANDEDNESS_SCORE = 0.8;
+// A hand held close to the camera fills the frame, is often cut off at the
+// edges and slightly blurred, so MediaPipe scores it lower even though it is
+// plainly a hand. There is no distance limit: big hands get a relaxed score.
+const MIN_HANDEDNESS_SCORE_CLOSE = 0.6;
+const CLOSE_HAND_SPAN = 0.35;               // hand covers over 35% of the frame width or height
 
 // Shape check: on a real hand the index/middle/ring fingers are about as long
 // as the palm (measured on ~10,700 dataset hands: 1st percentile 0.7-0.8x the
@@ -135,7 +140,9 @@ export async function createHandTracker() {
         const side = FLIP_HANDEDNESS ? flip(category) : category;
         if (side !== "Left" && side !== "Right") return;
         const score = top?.score ?? 0;
-        if (score < MIN_HANDEDNESS_SCORE) return;
+        const xs = landmarks.map((p) => p.x), ys = landmarks.map((p) => p.y);
+        const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+        if (score < (span >= CLOSE_HAND_SPAN ? MIN_HANDEDNESS_SCORE_CLOSE : MIN_HANDEDNESS_SCORE)) return;
         if (!looksLikeHand(landmarks, video.videoWidth || 1, video.videoHeight || 1)) return;
         found.push({ side, score, landmarks });
       });

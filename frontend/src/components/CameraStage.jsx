@@ -70,10 +70,10 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
       )}
       {running && state === "almost" && <div className="ring-hold" role="status" aria-label={t.almost} />}
       {running && state === "found" && (
-        <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={44} strokeWidth={3} /></div>
+        <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={20} strokeWidth={3} /></div>
       )}
       {running && state === "found" && (
-        <button type="button" className="found-cta btn btn-primary btn-lg" onClick={camera.openCheckIn}>{t.logFeeling}</button>
+        <button type="button" className="found-cta btn btn-primary" onClick={camera.openCheckIn}>{t.logFeeling}</button>
       )}
 
       {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span></div>}

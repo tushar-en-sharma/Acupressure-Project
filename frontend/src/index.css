@@ -553,3 +553,8 @@ h1, h2, h3 { text-wrap: balance; }
 .pr-del { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; }
 .pr-actions, .pr-clear { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .pr-clear { margin-top: 16px; font-size: 14px; }
+
+/* Smaller found tick and "Track" button so they don't cover the hand */
+.found-badge { top: 76px; left: auto; right: 14px; margin-left: 0; width: 34px; height: 34px; }
+.found-badge svg { width: 20px; height: 20px; }
+.found-cta { top: 76px; left: auto; right: 58px; transform: none; min-height: 34px; padding: 0 14px; font-size: 14px; border-radius: 999px; }
