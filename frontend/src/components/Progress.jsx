@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { IconBack, IconHand } from "./Icons";
 import { streakDays, activeDays } from "../progress";
 
-const W = 320, H = 150, PAD = { l: 28, r: 10, t: 10, b: 22 };
+const W = 320, H = 150, PAD = { l: 28, r: 22, t: 10, b: 22 };
 
 // Line chart of how it felt after pressing (dark) and before (light), 0 to 10.
 function Chart({ points, id }) {
@@ -16,6 +16,8 @@ function Chart({ points, id }) {
         <g key={v}><line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} stroke="#e7dfd0" strokeWidth="1" />
           <text x={PAD.l - 6} y={y(v) + 4} fontSize="10" textAnchor="end" fill="#7a6a5a" fontFamily="system-ui, sans-serif">{v}</text></g>
       ))}
+      <defs><linearGradient id={`${id}-g`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#B8922F" stopOpacity="0.35" /><stop offset="100%" stopColor="#B8922F" stopOpacity="0" /></linearGradient></defs>
+      {n > 1 && <path d={`${line("after")} L${x(n - 1).toFixed(1)} ${y(0)} L${x(0).toFixed(1)} ${y(0)} Z`} fill={`url(#${id}-g)`} />}
       {n > 1 && <path d={line("before")} fill="none" stroke="#d9c79b" strokeWidth="2" strokeDasharray="4 3" />}
       {n > 1 && <path d={line("after")} fill="none" stroke="#B8922F" strokeWidth="2.5" />}
       {points.map((p, i) => (
@@ -30,7 +32,32 @@ const fileStamp = () => new Date().toISOString().slice(0, 10);
 const shortDate = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" });
 const fullDate = (iso) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export default function Progress({ entries, titleOf, t, onBack, onAdd, onRemove, onClear }) {
+// Gauge: latest score out of 10 (a lower number means feeling better)
+function Ring({ value, size = 84, color = "#B8922F", label }) {
+  const r = 34, c = 2 * Math.PI * r;
+  return (
+    <div className="pg-ring" style={{ width: size, height: size }} role="img" aria-label={`${label} ${value}/10`}>
+      <svg viewBox="0 0 84 84" width={size} height={size}>
+        <circle cx="42" cy="42" r={r} fill="none" stroke="var(--tint)" strokeWidth="9" />
+        <circle cx="42" cy="42" r={r} fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
+          strokeDasharray={`${(value / 10) * c} ${c}`} transform="rotate(-90 42 42)" />
+      </svg>
+      <b>{value}<small>/10</small></b>
+    </div>
+  );
+}
+
+// Cards tilt a little towards the pointer (mouse only, not with reduced motion)
+function tilt(e) {
+  if (e.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  const px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
+  e.currentTarget.style.setProperty("--rx", `${(-py * 4).toFixed(2)}deg`);
+  e.currentTarget.style.setProperty("--ry", `${(px * 5).toFixed(2)}deg`);
+}
+const untilt = (e) => { e.currentTarget.style.setProperty("--rx", "0deg"); e.currentTarget.style.setProperty("--ry", "0deg"); };
+
+export default function Progress({ entries, titleOf, colorOf, t, onBack, onAdd, onRemove, onClear }) {
   const [confirmClear, setConfirmClear] = useState(false);
   const wrap = useRef(null);
   const groups = useMemo(() => {
@@ -39,7 +66,6 @@ export default function Progress({ entries, titleOf, t, onBack, onAdd, onRemove,
     return [...map.entries()].sort((a, b) => b[1][b[1].length - 1].ts.localeCompare(a[1][a[1].length - 1].ts));
   }, [entries]);
 
-  // Save a chart as a picture (also handy to send to a practitioner)
   async function savePicture(name, list, chartId) {
     const svg = wrap.current?.querySelector(`#${chartId}`);
     if (!svg) return;
@@ -54,7 +80,7 @@ export default function Progress({ entries, titleOf, t, onBack, onAdd, onRemove,
     g.fillStyle = "#3B2D2E"; g.font = "600 34px system-ui, sans-serif"; g.fillText(`${name} – ${t.myProgress}`, 40, 60);
     g.fillStyle = "#7a6a5a"; g.font = "22px system-ui, sans-serif";
     g.fillText(`${list.length} ${t.checkins} · ${shortDate(list[0].ts)} – ${shortDate(list[list.length - 1].ts)}`, 40, 98);
-    g.drawImage(img, 20, 120, 920, 920 * (H / W) > 400 ? 400 * (W / H) : 920, 920 * (H / W) > 400 ? 400 : 920 * (H / W));
+    g.drawImage(img, 20, 120, 920 * (H / W) > 400 ? 400 * (W / H) : 920, 920 * (H / W) > 400 ? 400 : 920 * (H / W));
     g.fillStyle = "#7a6a5a"; g.font = "18px system-ui, sans-serif";
     g.fillText(t.ciLegend, 40, 520); g.fillText("Revive Acupressure App – " + t.safetyShort, 40, 545);
     const blob = await new Promise((r) => c.toBlob(r, "image/png"));
@@ -66,57 +92,82 @@ export default function Progress({ entries, titleOf, t, onBack, onAdd, onRemove,
   }
 
   return (
-    <section className="progress" ref={wrap} aria-label={t.myProgress}>
-      <div className="pr-head">
-        <button type="button" className="cam-btn pr-back" onClick={onBack}><IconBack size={22} /><span>{t.home}</span></button>
+    <section className="pg" ref={wrap} aria-label={t.myProgress}>
+      <header className="pg-hero">
+        <button type="button" className="pg-home" onClick={onBack}><IconBack size={20} /><span>{t.home}</span></button>
         <h1>{t.myProgress}</h1>
-      </div>
-      <p className="pr-priv">{t.progressPrivacy}</p>
+        <p>{t.progressPrivacy}</p>
+        {entries.length > 0 && (
+          <div className="pg-tiles">
+            {[[entries.length, t.checkins], [activeDays(entries), t.daysUsed], [streakDays(entries), t.streak]].map(([n, l]) => (
+              <div className="pg-tile" key={l} onPointerMove={tilt} onPointerLeave={untilt}><b>{n}</b><span>{l}</span></div>
+            ))}
+          </div>
+        )}
+      </header>
 
       {entries.length === 0 ? (
-        <div className="pr-empty">
-          <IconHand size={56} />
+        <div className="pg-empty">
+          <span className="pg-empty-ico" aria-hidden="true"><IconHand size={44} /></span>
           <p>{t.progressEmpty}</p>
           <button type="button" className="btn btn-primary btn-lg" onClick={onBack}>{t.progressStart}</button>
         </div>
       ) : (<>
-        <div className="pr-stats">
-          <div><b>{entries.length}</b><span>{t.checkins}</span></div>
-          <div><b>{activeDays(entries)}</b><span>{t.daysUsed}</span></div>
-          <div><b>{streakDays(entries)}</b><span>{t.streak}</span></div>
-        </div>
         {groups.map(([name, list], gi) => {
           const pts = list.map((e) => ({ ...e, label: shortDate(e.ts) }));
           const last = list[list.length - 1], first = list[0];
           const cid = `chart-${gi}`;
           const diff = list.length > 1 ? first.after - last.after : null;
+          const color = colorOf(name);
+          const bars = list.slice(-8);
           return (
-            <article className="pr-card" key={name}>
-              <h2>{titleOf(name)}</h2>
-              <p className="pr-sum">
-                {t.latest}: <b>{last.after}/10</b>
-                {diff != null && diff !== 0 && <> · {diff > 0 ? t.felt.lower.replace("{n}", diff) : t.felt.higher.replace("{n}", -diff)}</>}
-                {diff === 0 && <> · {t.felt.same}</>}
-              </p>
-              <Chart points={pts} id={cid} />
-              <p className="pr-legend"><i className="k-after" /> {t.ciAfterShort} <i className="k-before" /> {t.ciBeforeShort}</p>
-              <ul className="pr-list">
+            <article className="pg-card" key={name} style={{ "--c": color }} onPointerMove={tilt} onPointerLeave={untilt}>
+              <div className="pg-card-head">
+                <Ring value={last.after} label={t.latest} color={color} />
+                <div>
+                  <h2>{titleOf(name)}</h2>
+                  <p className="pg-sum">{t.latest}: <b>{last.after}/10</b> · {fullDate(last.ts)}</p>
+                  {diff != null && (
+                    <span className={`pg-trend ${diff > 0 ? "down" : diff < 0 ? "up" : "same"}`}>
+                      {diff > 0 ? "▼ " + t.felt.lower.replace("{n}", diff) : diff < 0 ? "▲ " + t.felt.higher.replace("{n}", -diff) : "● " + t.felt.same}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="pg-bars" role="img" aria-label={t.ciLegend}>
+                {bars.map((e) => (
+                  <div className="pg-col" key={e.id}>
+                    <div className="pg-pair">
+                      <i className="bar3d before" style={{ "--h": e.before / 10 }}><em>{e.before}</em></i>
+                      <i className="bar3d after" style={{ "--h": e.after / 10 }}><em>{e.after}</em></i>
+                    </div>
+                    <span>{shortDate(e.ts)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="pg-legend"><i className="k-before" /> {t.ciBeforeShort} <i className="k-after" /> {t.ciAfterShort} · 0 = {t.ciNone.replace("0 = ", "")}, 10 = {t.ciWorst.replace("10 = ", "")}</p>
+
+              {list.length > 1 && <div className="pg-trendline"><Chart points={pts} id={cid} /></div>}
+              {list.length === 1 && <div className="pg-trendline pg-hidden"><Chart points={pts} id={cid} /></div>}
+
+              <ul className="pg-list">
                 {[...list].reverse().slice(0, 5).map((e) => (
                   <li key={e.id}>
-                    <span><b>{fullDate(e.ts)}</b> · {t.ciBeforeShort} {e.before} → {t.ciAfterShort} {e.after}{e.note && <em> “{e.note}”</em>}</span>
-                    <button type="button" className="pr-del" aria-label={t.remove} onClick={() => onRemove(e.id)}>×</button>
+                    <span><b>{fullDate(e.ts)}</b><small>{t.ciBeforeShort} {e.before} → {t.ciAfterShort} {e.after}</small>{e.note && <em>“{e.note}”</em>}</span>
+                    <button type="button" className="pg-del" aria-label={t.remove} onClick={() => onRemove(e.id)}>×</button>
                   </li>
                 ))}
               </ul>
-              <div className="pr-actions">
-                <button type="button" className="btn btn-primary" onClick={() => onAdd(name)}>{t.addCheckin}</button>
+              <div className="pg-actions">
+                <button type="button" className="btn btn-primary" onClick={() => onAdd(name)}>+ {t.addCheckin}</button>
                 <button type="button" className="btn btn-ghost" onClick={() => savePicture(titleOf(name), list, cid)}>{t.savePicture}</button>
               </div>
             </article>
           );
         })}
-        <p className="pr-note">{t.progressNote}</p>
-        <div className="pr-clear">
+        <p className="pg-note">{t.progressNote}</p>
+        <div className="pg-clear">
           {confirmClear ? (<>
             <span>{t.clearSure}</span>
             <button type="button" className="btn btn-ghost" onClick={() => { onClear(); setConfirmClear(false); }}>{t.clearYes}</button>

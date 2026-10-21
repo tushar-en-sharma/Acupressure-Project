@@ -422,7 +422,7 @@ export default function App() {
           <div className="flow">
             <h1 className="sr-only">{t.heroTitle}</h1>
             {showProgress && (
-              <Progress entries={entries} t={t} titleOf={(n) => { const p = problems.find((x) => x.name === n); return p ? problemTitle(p, lang) : n.replace(/^Su Jok: /, ""); }}
+              <Progress entries={entries} t={t} colorOf={(n) => problems.find((x) => x.name === n)?.color || "#B8922F"} titleOf={(n) => { const p = problems.find((x) => x.name === n); return p ? problemTitle(p, lang) : n.replace(/^Su Jok: /, ""); }}
                 onBack={() => chooseProblem("")} onAdd={(n) => setCheckInFor(n)}
                 onRemove={(id) => setEntries((l) => removeEntry(l, id))} onClear={() => setEntries(clearEntries())} />
             )}

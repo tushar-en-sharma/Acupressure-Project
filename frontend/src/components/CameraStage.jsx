@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, HandGuide } from "./Icons";
+import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, IconChart, HandGuide } from "./Icons";
 
 function requiredFaces(problem, engine) {
   const faces = new Set();
@@ -49,10 +49,15 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
           <button type="button" className="cam-btn glass" onClick={onBack}><IconBack size={22} /><span>{t.goBack}</span></button>
           <button type="button" className="cam-btn glass" onClick={camera.goHome}><IconHome size={22} /><span>{t.home}</span></button>
         </div>
-        {camera.canFlip && (
-          <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
-            disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
-        )}
+        <div className="cam-side">
+          {camera.canFlip && (
+            <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
+              disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
+          )}
+          {running && (
+            <button type="button" className="cam-btn glass" onClick={camera.openCheckIn}><IconChart size={22} /><span>{t.logFeeling}</span></button>
+          )}
+        </div>
       </div>
 
       {running && state === "none" && (
@@ -70,10 +75,7 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
       )}
       {running && state === "almost" && <div className="ring-hold" role="status" aria-label={t.almost} />}
       {running && state === "found" && (
-        <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={20} strokeWidth={3} /></div>
-      )}
-      {running && state === "found" && (
-        <button type="button" className="found-cta btn btn-primary" onClick={camera.openCheckIn}>{t.logFeeling}</button>
+        <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={14} strokeWidth={3.5} /></div>
       )}
 
       {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span></div>}
