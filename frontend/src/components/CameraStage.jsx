@@ -63,9 +63,6 @@ export default function CameraStage({ camera, problem, engine, active, onBack, o
             <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
               disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
           )}
-          {running && (
-            <button type="button" className="cam-btn glass" onClick={camera.openCheckIn}><IconChart size={22} /><span>{t.logFeeling}</span></button>
-          )}
         </div>
       </div>
 
@@ -113,6 +110,10 @@ export default function CameraStage({ camera, problem, engine, active, onBack, o
           <p>{error}</p>
           <button type="button" className="btn btn-primary btn-lg" onClick={camera.start}><IconHand size={22} />{t.retry}</button>
         </div>
+      )}
+
+      {running && (
+        <button type="button" className="cam-btn glass cam-track" onClick={camera.openCheckIn}><IconChart size={22} /><span>{t.logFeeling}</span></button>
       )}
 
       {running && (
