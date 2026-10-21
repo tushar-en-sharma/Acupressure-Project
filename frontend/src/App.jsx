@@ -8,7 +8,8 @@ import { WhatsAppFloat, BookAppointment } from "./components/WhatsAppBook";
 import { STRINGS, problemTitle } from "./i18n";
 import BodyPicker from "./components/BodyPicker";
 import SeeStage from "./components/SeeStage";
-import CameraStage from "./components/CameraStage";
+import CameraStage, { CAMERA_DENIED } from "./components/CameraStage";
+import PrivacyInfo from "./components/PrivacyInfo";
 import { IconBody, IconHand, IconCamera, IconList, IconNext, IconCheck, IconHome, IconChart } from "./components/Icons";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
@@ -75,6 +76,8 @@ export default function App() {
   const [facing, setFacing] = useState("environment");
   const [mirrored, setMirrored] = useState(false);
   const [photoSaved, setPhotoSaved] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const openPrivacy = () => { track("privacy_opened"); setShowPrivacy(true); };
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -281,7 +284,7 @@ export default function App() {
       track(err?.name === "NotAllowedError" ? "camera_denied" : "camera_error", { reason: err?.name || "unknown" });
       setCameraError(
         err?.name === "NotAllowedError"
-          ? "Camera access was blocked. Allow the camera for this site in your browser settings, then try again."
+          ? CAMERA_DENIED
           : "Couldn't start the camera: " + (err?.message || err)
       );
       stopCamera();
@@ -471,7 +474,7 @@ export default function App() {
               </section>
             )}
             {!showProgress && problem && (
-              <SeeStage problem={problem} views={referenceViews} onTry={camera.tryNow}
+              <SeeStage problem={problem} views={referenceViews} onTry={camera.tryNow} onPrivacy={openPrivacy}
                 onBack={() => chooseProblem("")} t={t} lang={lang} />
             )}
             {!showProgress && !problem && <BookAppointment t={t} problem={null} lang={lang} />}
@@ -480,9 +483,10 @@ export default function App() {
       </main>
 
       {consent === null && <ConsentBar t={t} onChoose={chooseConsent} />}
-      {!problem && <SiteFooter t={t} />}
-      <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem}
+      {!problem && <SiteFooter t={t} onPrivacy={openPrivacy} />}
+      <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem} onPrivacy={openPrivacy}
         onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />
+      {showPrivacy && <PrivacyInfo t={t} onClose={() => setShowPrivacy(false)} />}
       {checkInFor && (() => {
         const p = problems.find((x) => x.name === checkInFor);
         return (

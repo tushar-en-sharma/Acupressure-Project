@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, IconChart, HandGuide } from "./Icons";
+import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, IconChart, IconStop, HandGuide } from "./Icons";
+
+// App.jsx passes this instead of text when the browser says the camera was blocked.
+export const CAMERA_DENIED = "__denied__";
+
+// Which "how to allow the camera" line fits this device.
+function deniedHelp(t) {
+  const ua = typeof navigator === "undefined" ? "" : navigator.userAgent || "";
+  return /iPhone|iPad|iPod/.test(ua) ? t.deniedIos : /Android/.test(ua) ? t.deniedAndroid : t.deniedDesktop;
+}
 
 function requiredFaces(problem, engine) {
   const faces = new Set();
@@ -14,7 +23,7 @@ function requiredFaces(problem, engine) {
 
 // Step 3: full-screen camera. The state is shown with pictures, not sentences:
 // ghost hand = show your hand, flipping hand = turn it, green tick = found it.
-export default function CameraStage({ camera, problem, engine, active, onBack, t }) {
+export default function CameraStage({ camera, problem, engine, active, onBack, onPrivacy, t }) {
   const { running, starting, error, videoAspect, videoRef, canvasRef, live } = camera;
   const faces = requiredFaces(problem, engine);
   const want = faces.size === 1 ? [...faces][0] : "palm";
@@ -60,6 +69,14 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
         </div>
       </div>
 
+      {running && (
+        <div className="live-pill glass" role="status">
+          <span className="live-dot" aria-hidden="true" />
+          <span>{t.camLive}</span>
+          <button type="button" className="live-info" onClick={onPrivacy}>{t.ppDetails}</button>
+        </div>
+      )}
+
       {running && state === "none" && (
         <div className="guide guide-none" aria-label={t.noHand} role="status">
           <HandGuide face={want} />
@@ -78,9 +95,19 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
         <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={14} strokeWidth={3.5} /></div>
       )}
 
-      {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span></div>}
+      {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span><span className="cam-wait-priv">{t.handOnlyHint}</span></div>}
 
-      {error && (
+      {error && error === CAMERA_DENIED && (
+        <div className="cam-err" role="alert">
+          <IconNoCam size={56} />
+          <h2>{t.deniedTitle}</h2>
+          <p>{t.deniedSub}</p>
+          <p className="cam-err-how">{deniedHelp(t)}</p>
+          <button type="button" className="btn btn-primary btn-lg" onClick={onBack}><IconBack size={22} />{t.deniedUse}</button>
+          <button type="button" className="live-info" onClick={onPrivacy}>{t.ppDetails}</button>
+        </div>
+      )}
+      {error && error !== CAMERA_DENIED && (
         <div className="cam-err" role="alert">
           <IconNoCam size={56} />
           <p>{error}</p>
@@ -90,6 +117,7 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
 
       {running && (
         <div className="cam-bottom">
+          <button type="button" className="cam-btn stop-cam" onClick={onBack}><IconStop size={20} /><span>{t.camStop}</span></button>
           <button type="button" className="shutter" onClick={camera.savePhoto} aria-label={t.takePhoto}><span /></button>
           <span className="shutter-label">{t.takePhoto}</span>
         </div>

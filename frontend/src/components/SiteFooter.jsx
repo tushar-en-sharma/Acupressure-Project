@@ -9,7 +9,7 @@ const LINKS = [
   ["Contact", site.contactUrl],
 ];
 
-export default function SiteFooter({ t }) {
+export default function SiteFooter({ t, onPrivacy }) {
   return (
     <footer className="footer site-footer">
       <div className="foot-grid">
@@ -42,6 +42,7 @@ export default function SiteFooter({ t }) {
       </div>
       <p className="foot-note">{t.safety}</p>
       <p className="foot-note">
+        <button type="button" className="foot-link" onClick={onPrivacy}>{t.piTitle}</button> &middot;{" "}
         <a href={site.privacyUrl} target="_blank" rel="noopener">Privacy</a> &middot;{" "}
         <a href={site.termsUrl} target="_blank" rel="noopener">Terms</a> &middot; &copy; {YEAR} Revive
       </p>

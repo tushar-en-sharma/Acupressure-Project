@@ -33,3 +33,5 @@ export function HandGuide({ face = "palm", className = "" }) {
     </svg>
   );
 }
+export const IconShield = mk(<><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z" /><path d="M9 12l2.2 2.2L15.5 10" /></>);
+export const IconClose = mk(<path d="M6 6l12 12M18 6L6 18" />);
