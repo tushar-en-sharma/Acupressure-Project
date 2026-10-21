@@ -7,6 +7,7 @@ export const IconBody = mk(<><circle cx="12" cy="4.5" r="2.3" /><path d="M12 8v6
 export const IconHand = mk(<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11m0-6.5a1.5 1.5 0 0 1 3 0V11m0-4.5a1.5 1.5 0 0 1 3 0V13m0-3.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.6-2.2L4 14.5a1.6 1.6 0 0 1 2.4-2L8 14" />);
 export const IconCamera = mk(<><path d="M3 7h3l1.5-2h9L18 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3.5" /></>);
 export const IconFlipCam = mk(<><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><path d="M9 13.5a3 3 0 0 1 5-1.6l.6.6M15 14.5a3 3 0 0 1-5 1.6l-.6-.6M14.8 10.8v1.9h-1.9M9.2 16.2v-1.9h1.9" /></>);
+export const IconHome = mk(<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />);
 export const IconBack = mk(<path d="M15 5l-7 7 7 7" />);
 export const IconNext = mk(<path d="M5 12h14m-6-6 6 6-6 6" />);
 export const IconSpeaker = mk(<path d="M3 9v6h4l5 4V5L7 9zM15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" />);

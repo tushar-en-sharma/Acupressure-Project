@@ -9,7 +9,7 @@ import { STRINGS, problemTitle } from "./i18n";
 import BodyPicker from "./components/BodyPicker";
 import SeeStage from "./components/SeeStage";
 import CameraStage from "./components/CameraStage";
-import { IconBody, IconHand, IconCamera, IconList, IconNext } from "./components/Icons";
+import { IconBody, IconHand, IconCamera, IconList, IconNext, IconCheck, IconHome } from "./components/Icons";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
 import { track, problemKey, areaOf, deviceType, getConsent, setConsent, initAnalytics } from "./analytics";
@@ -63,8 +63,9 @@ export default function App() {
   const [videoAspect, setVideoAspect] = useState(null);
   // Which camera the user asked for, and whether the live feed is shown as a
   // mirrored "selfie" (front camera) or as-is (back camera).
-  const [facing, setFacing] = useState("user");
-  const [mirrored, setMirrored] = useState(true);
+  const [facing, setFacing] = useState("environment");
+  const [mirrored, setMirrored] = useState(false);
+  const [photoSaved, setPhotoSaved] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -303,6 +304,7 @@ export default function App() {
     a.href = out.toDataURL("image/jpeg", 0.9);
     a.download = `revive-acupressure-${Date.now()}.jpg`;
     a.click();
+    setPhotoSaved(true);
   }
 
   const camera = {
@@ -325,6 +327,7 @@ export default function App() {
       if (!running && !starting) startCamera(facing);
     },
     stop: stopCamera,
+    goHome: () => { stopCamera(); chooseProblem(""); },
     savePhoto,
   };
 
@@ -332,7 +335,7 @@ export default function App() {
     <div className={`app${large ? " large" : ""}`}>
       <header className="topbar">
         <div className="topbar-row">
-          <button type="button" className="brand" onClick={() => chooseProblem("")} aria-label="Home">
+          <button type="button" className="brand" onClick={() => chooseProblem("")} aria-label={t.home} title={t.home}>
             <img className="brand-mark" src="/img/logo-200.webp" width="44" height="44" alt="" />
             <span className="brand-name">Revive Acupressure App</span>
           </button>
@@ -358,7 +361,7 @@ export default function App() {
             return (
               <li key={i} className={i + 1 === cur ? "now" : i + 1 < cur ? "done" : ""}>
                 <button type="button" onClick={go} aria-label={label} aria-current={i + 1 === cur ? "step" : undefined} disabled={i > 0 && !problem}>
-                  <Ico size={22} />
+                  <Ico size={22} /><span className="step-label">{label}</span>
                 </button>
               </li>
             );
@@ -422,6 +425,18 @@ export default function App() {
       {!problem && <SiteFooter t={t} />}
       <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem}
         onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />
+      {photoSaved && (
+        <div className="modal-back" role="dialog" aria-modal="true" aria-labelledby="saved-title">
+          <div className="modal-card">
+            <span className="modal-ico" aria-hidden="true"><IconCheck size={34} strokeWidth={3} /></span>
+            <h2 id="saved-title">{t.savedTitle}</h2>
+            <p>{t.savedSub}</p>
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => { setPhotoSaved(false); stopCamera(); chooseProblem(""); }}><IconHome size={22} />{t.goHome}</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setPhotoSaved(false)}>{t.keepTrying}</button>
+            <a className="modal-link" href={site.siteUrl} rel="noopener">{t.visitSite}</a>
+          </div>
+        </div>
+      )}
       <WhatsAppFloat t={t} problem={problem} lang={lang} />
     </div>
   );

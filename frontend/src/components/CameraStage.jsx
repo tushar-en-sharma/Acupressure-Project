@@ -1,4 +1,4 @@
-import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, HandGuide } from "./Icons";
+import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, HandGuide } from "./Icons";
 
 function requiredFaces(problem, engine) {
   const faces = new Set();
@@ -36,9 +36,12 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
       </div>
 
       <div className="cam-top">
-        <button type="button" className="round-btn glass" onClick={onBack} aria-label={t.goBack}><IconBack /></button>
-        <button type="button" className="round-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
-          disabled={starting} aria-label={camera.facing === "user" ? t.back : t.front}><IconFlipCam /></button>
+        <div className="cam-nav">
+          <button type="button" className="cam-btn glass" onClick={onBack}><IconBack size={22} /><span>{t.goBack}</span></button>
+          <button type="button" className="cam-btn glass" onClick={camera.goHome}><IconHome size={22} /><span>{t.home}</span></button>
+        </div>
+        <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
+          disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
       </div>
 
       {running && state === "none" && (
@@ -56,7 +59,7 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
         <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={44} strokeWidth={3} /></div>
       )}
 
-      {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><IconLock size={18} /><span>{t.private}</span></div>}
+      {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span></div>}
 
       {error && (
         <div className="cam-err" role="alert">
@@ -68,7 +71,8 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
 
       {running && (
         <div className="cam-bottom">
-          <button type="button" className="shutter" onClick={camera.savePhoto} aria-label={t.savePhoto}><span /></button>
+          <button type="button" className="shutter" onClick={camera.savePhoto} aria-label={t.takePhoto}><span /></button>
+          <span className="shutter-label">{t.takePhoto}</span>
         </div>
       )}
     </section>
