@@ -375,6 +375,95 @@ PROBLEMS = {
         "color": (160, 220, 110), "system": "su_jok",
         "protocols": [{"points": ["SJ Right Ankle"]}, {"points": ["SJ Left Ankle"]}],
     },
+
+    # ── PENDING REVIEW: extra Su Jok problems ─────────────────────────────────
+    # Added from the existing correspondence zones above only (no new zones, no
+    # invented positions). Each one maps a complaint to the zone Su Jok assigns
+    # to that body part. A practitioner must review this list before release.
+    "Su Jok: Cold / Blocked Nose / Sinus": {
+        "title": "Cold / Blocked Nose / Sinus",
+        "description": "Thumb tip, palm side = face, nose and sinuses",
+        "color": (120, 210, 255), "system": "su_jok",
+        "protocols": [{"points": ["SJ Head-Front"]}],
+    },
+    "Su Jok: Dizziness": {
+        "title": "Dizziness",
+        "description": "Thumb tip, back side = back of the head, plus the neck bone below it",
+        "color": (150, 170, 255), "system": "su_jok",
+        "protocols": [{"points": ["SJ Head-Back", "SJ Neck"]}],
+    },
+    "Su Jok: Hoarse Voice / Voice Strain": {
+        "title": "Hoarse Voice / Voice Strain",
+        "description": "Lower thumb bone, palm side = throat and voice box",
+        "color": (90, 230, 210), "system": "su_jok",
+        "protocols": [{"points": ["SJ Throat"]}],
+    },
+    "Su Jok: Chest Congestion": {
+        "title": "Chest Congestion",
+        "description": "Thumb pad of the palm (thenar) = chest and lungs",
+        "color": (40, 190, 255), "system": "su_jok",
+        "protocols": [{"points": ["SJ Chest"]}],
+    },
+    "Su Jok: Breathing Discomfort": {
+        "title": "Breathing Discomfort",
+        "description": "Thumb pad of the palm (thenar) = chest and lungs. Severe or sudden breathlessness needs a doctor.",
+        "color": (70, 170, 235), "system": "su_jok",
+        "protocols": [{"points": ["SJ Chest"]}],
+    },
+    "Su Jok: Nausea": {
+        "title": "Nausea",
+        "description": "Centre of the palm close to the wrist = stomach",
+        "color": (130, 235, 190), "system": "su_jok",
+        "protocols": [{"points": ["SJ Stomach"]}],
+    },
+    "Su Jok: Loss of Appetite": {
+        "title": "Loss of Appetite",
+        "description": "Centre of the palm close to the wrist = stomach",
+        "color": (150, 225, 160), "system": "su_jok",
+        "protocols": [{"points": ["SJ Stomach"]}],
+    },
+    "Su Jok: Gas / Bloating": {
+        "title": "Gas / Bloating",
+        "description": "Centre of the palm = stomach and intestines",
+        "color": (255, 190, 120), "system": "su_jok",
+        "protocols": [{"points": ["SJ Stomach", "SJ Intestine"]}, {"points": ["SJ Intestine"]}],
+    },
+    "Su Jok: Stomach Cramps": {
+        "title": "Stomach Cramps",
+        "description": "Centre of the palm = intestines",
+        "color": (255, 140, 110), "system": "su_jok",
+        "protocols": [{"points": ["SJ Intestine"]}],
+    },
+    "Su Jok: Loose Motions": {
+        "title": "Loose Motions",
+        "description": "Centre of the palm = intestines. Frequent loose motions with weakness or fever need a doctor.",
+        "color": (235, 110, 110), "system": "su_jok",
+        "protocols": [{"points": ["SJ Intestine"]}],
+    },
+    "Su Jok: Period Pain": {
+        "title": "Period Pain",
+        "description": "Palm at the base of the middle and ring fingers = pelvis. Avoid in pregnancy.",
+        "color": (225, 140, 215), "system": "su_jok",
+        "protocols": [{"points": ["SJ Pelvis"]}],
+    },
+    "Su Jok: Urinary Discomfort": {
+        "title": "Urinary Discomfort",
+        "description": "Palm at the base of the middle and ring fingers = pelvis and bladder. Burning or blood needs a doctor.",
+        "color": (190, 150, 240), "system": "su_jok",
+        "protocols": [{"points": ["SJ Pelvis"]}],
+    },
+    "Su Jok: General Backache": {
+        "title": "General Backache",
+        "description": "Back of the hand = back of the body, upper and lower",
+        "color": (255, 200, 90), "system": "su_jok",
+        "protocols": [{"points": ["SJ Upper Back"]}, {"points": ["SJ Lower Back"]}],
+    },
+    "Su Jok: Sciatica-type Leg Pain": {
+        "title": "Sciatica-type Leg Pain",
+        "description": "Lower back (middle of the back of the hand) with the hip joint of the leg fingers",
+        "color": (110, 190, 255), "system": "su_jok",
+        "protocols": [{"points": ["SJ Lower Back", "SJ Right Hip"]}, {"points": ["SJ Lower Back", "SJ Left Hip"]}],
+    },
 }
 
 

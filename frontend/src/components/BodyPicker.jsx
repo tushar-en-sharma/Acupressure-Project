@@ -21,6 +21,20 @@ const SPOTS = {
   "Su Jok: Hip Pain": [-0.36, -0.02, 0.2, "front"],
   "Su Jok: Knee Pain": [-0.2, -1.25, 0.17, "front"],
   "Su Jok: Ankle Sprain": [-0.2, -2.1, 0.12, "front"],
+  "Su Jok: Cold / Blocked Nose / Sinus": [0, 1.82, 0.3, "front"],
+  "Su Jok: Dizziness": [0, 1.7, -0.3, "back"],
+  "Su Jok: Hoarse Voice / Voice Strain": [0, 1.46, 0.14, "front"],
+  "Su Jok: Chest Congestion": [0.0, 1.2, 0.28, "front"],
+  "Su Jok: Breathing Discomfort": [-0.1, 1.25, 0.28, "front"],
+  "Su Jok: Nausea": [0.1, 0.78, 0.3, "front"],
+  "Su Jok: Loss of Appetite": [-0.1, 0.78, 0.3, "front"],
+  "Su Jok: Gas / Bloating": [0.1, 0.55, 0.3, "front"],
+  "Su Jok: Stomach Cramps": [-0.1, 0.45, 0.3, "front"],
+  "Su Jok: Loose Motions": [0.1, 0.3, 0.3, "front"],
+  "Su Jok: Period Pain": [-0.1, 0.06, 0.28, "front"],
+  "Su Jok: Urinary Discomfort": [0.1, -0.02, 0.28, "front"],
+  "Su Jok: General Backache": [0, 0.8, -0.3, "back"],
+  "Su Jok: Sciatica-type Leg Pain": [-0.2, 0.3, -0.3, "back"],
 };
 
 function glowTexture(THREE) {

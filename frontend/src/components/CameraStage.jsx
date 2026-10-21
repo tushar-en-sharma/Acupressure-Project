@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { IconBack, IconFlipCam, IconCheck, IconNoCam, IconLock, IconHand, IconHome, HandGuide } from "./Icons";
 
 function requiredFaces(problem, engine) {
@@ -24,6 +25,14 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
     else if (faces.size === 1 && live.hands.every((h) => h.facing !== want)) state = "turn";
     else state = "almost";
   }
+  // If no hand shows up for a while, say how to help the camera see it
+  const [tip, setTip] = useState(false);
+  const waiting = running && state === "none";
+  useEffect(() => {
+    if (!waiting) return undefined;
+    const id = setTimeout(() => setTip(true), 8000);
+    return () => { clearTimeout(id); setTip(false); };
+  }, [waiting]);
   const frameStyle = videoAspect ? { aspectRatio: `${videoAspect[0]} / ${videoAspect[1]}` } : undefined;
 
   return (
@@ -40,14 +49,19 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
           <button type="button" className="cam-btn glass" onClick={onBack}><IconBack size={22} /><span>{t.goBack}</span></button>
           <button type="button" className="cam-btn glass" onClick={camera.goHome}><IconHome size={22} /><span>{t.home}</span></button>
         </div>
-        <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
-          disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
+        {camera.canFlip && (
+          <button type="button" className="cam-btn glass" onClick={() => camera.chooseCamera(camera.facing === "user" ? "environment" : "user")}
+            disabled={starting}><IconFlipCam size={22} /><span>{camera.facing === "user" ? t.useBack : t.useFront}</span></button>
+        )}
       </div>
 
       {running && state === "none" && (
         <div className="guide guide-none" aria-label={t.noHand} role="status">
           <HandGuide face={want} />
         </div>
+      )}
+      {tip && waiting && (
+        <div className="cam-tip" role="status"><strong>{t.tipTitle}</strong><span>{t.tipBody}</span></div>
       )}
       {running && state === "turn" && (
         <div className="guide guide-turn" aria-label={t.turn.replace("{face}", "")} role="status">
@@ -57,6 +71,9 @@ export default function CameraStage({ camera, problem, engine, active, onBack, t
       {running && state === "almost" && <div className="ring-hold" role="status" aria-label={t.almost} />}
       {running && state === "found" && (
         <div className="found-badge" role="status" aria-label={t.found}><IconCheck size={44} strokeWidth={3} /></div>
+      )}
+      {running && state === "found" && (
+        <button type="button" className="found-cta btn btn-primary btn-lg" onClick={camera.openCheckIn}>{t.logFeeling}</button>
       )}
 
       {starting && !error && <div className="cam-wait" role="status"><span className="spin" aria-hidden="true" /><strong className="cam-wait-title">{t.waitTitle}</strong><span>{t.waitSub}</span><span className="cam-wait-priv"><IconLock size={16} />{t.private}</span></div>}

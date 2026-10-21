@@ -508,3 +508,48 @@ h1, h2, h3 { text-wrap: balance; }
 .modal-card p { margin: 0; }
 .modal-ico { align-self: center; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--gold); color: #fff; }
 .modal-link { color: var(--muted); font-size: 14px; }
+
+.continue-card { display: flex; align-items: center; gap: 14px; width: 100%; margin: 0 0 14px; padding: 14px 18px; border: 2px solid var(--c, var(--gold)); border-radius: 18px; background: var(--surface); color: var(--heading); font: inherit; text-align: left; cursor: pointer; box-shadow: var(--shadow); }
+.continue-card > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
+.continue-card small { color: var(--muted); font-size: 13px; }
+.continue-card strong { font-size: 18px; }
+.continue-card:active { transform: scale(0.99); }
+.cam-tip { position: absolute; left: 14px; right: 14px; bottom: 140px; z-index: 2; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 14px; background: rgba(0, 0, 0, 0.6); color: #fff; text-align: center; font-size: 15px; }
+
+/* My progress + check-in */
+.top-progress { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 420px) { .top-progress span { display: none; } }
+.progress-chip { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 10px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--heading); font: inherit; font-weight: 600; cursor: pointer; }
+.found-cta { position: absolute; left: 50%; top: calc(14% + 104px); transform: translateX(-50%); z-index: 2; white-space: nowrap; }
+.ci-card { text-align: left; max-height: 92vh; overflow-y: auto; }
+.ci-card h2, .ci-for { text-align: center; }
+.ci-for { margin: 0; font-weight: 600; color: var(--heading); }
+.ci-field label, .ci-note { display: block; font-weight: 600; color: var(--heading); }
+.ci-val { float: right; font-size: 22px; color: var(--gold-dark, var(--gold)); }
+.ci-field input[type=range] { width: 100%; height: 40px; accent-color: var(--gold); }
+.ci-scale { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.ci-note textarea { width: 100%; margin-top: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; font: inherit; resize: vertical; }
+.ci-warn { margin: 0; padding: 10px 12px; border-radius: 12px; background: #FEE4E2; color: #7A271A; font-size: 14px; }
+.ci-priv { text-align: center; color: var(--muted); }
+.progress { max-width: 640px; margin: 0 auto; padding: 8px 0 40px; }
+.pr-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pr-head h1 { margin: 0; color: var(--heading); font-size: 26px; }
+.pr-back { background: var(--surface-2, #f1ebdd); color: var(--heading); }
+.pr-priv, .pr-note { color: var(--muted); font-size: 14px; }
+.pr-empty { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 36px 16px; text-align: center; color: var(--muted); }
+.pr-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+.pr-stats div { padding: 14px 8px; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); text-align: center; }
+.pr-stats b { display: block; font-size: 30px; color: var(--heading); }
+.pr-stats span { font-size: 13px; color: var(--muted); }
+.pr-card { margin: 14px 0; padding: 16px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow); }
+.pr-card h2 { margin: 0 0 4px; font-size: 19px; color: var(--heading); }
+.pr-sum { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.pr-legend { font-size: 13px; color: var(--muted); margin: 6px 0; }
+.pr-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin: 0 4px 0 8px; vertical-align: -1px; }
+.k-after { background: #B8922F; } .k-before { background: #d9c79b; }
+.pr-list { list-style: none; margin: 8px 0; padding: 0; font-size: 14px; }
+.pr-list li { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
+.pr-list em { color: var(--muted); }
+.pr-del { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; }
+.pr-actions, .pr-clear { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.pr-clear { margin-top: 16px; font-size: 14px; }

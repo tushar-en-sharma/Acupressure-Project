@@ -9,10 +9,13 @@ import { STRINGS, problemTitle } from "./i18n";
 import BodyPicker from "./components/BodyPicker";
 import SeeStage from "./components/SeeStage";
 import CameraStage from "./components/CameraStage";
-import { IconBody, IconHand, IconCamera, IconList, IconNext, IconCheck, IconHome } from "./components/Icons";
+import { IconBody, IconHand, IconCamera, IconList, IconNext, IconCheck, IconHome, IconChart } from "./components/Icons";
 import SiteFooter from "./components/SiteFooter";
 import site from "./site";
 import { track, problemKey, areaOf, deviceType, getConsent, setConsent, initAnalytics } from "./analytics";
+import Progress from "./components/Progress";
+import CheckIn from "./components/CheckIn";
+import { loadEntries, addEntry, removeEntry, clearEntries, streakDays } from "./progress";
 import ConsentBar from "./components/ConsentBar";
 
 // Which point systems the app offers. Classical acupressure is hidden for
@@ -61,6 +64,12 @@ export default function App() {
   const [cameraError, setCameraError] = useState("");
   const [live, setLive] = useState({ hands: [], found: [], complete: false });
   const [videoAspect, setVideoAspect] = useState(null);
+  // How many cameras the device has. null = not checked yet (assume phone-like until we know).
+  const [entries, setEntries] = useState(loadEntries);
+  const [showProgress, setShowProgress] = useState(false);
+  const [checkInFor, setCheckInFor] = useState(null);
+  const [cameraCount, setCameraCount] = useState(null);
+  const [lastName] = useState(() => { try { return localStorage.getItem("last-problem"); } catch { return null; } });
   // Which camera the user asked for, and whether the live feed is shown as a
   // mirrored "selfie" (front camera) or as-is (back camera).
   const [facing, setFacing] = useState("environment");
@@ -88,6 +97,7 @@ export default function App() {
   const visibleProblems = problems.filter((p) => VISIBLE_SYSTEMS.has(p.system));
   const problem = visibleProblems.find((p) => p.name === selected) || null;
   problemRef.current = problem;
+  const lastProblem = lastName ? visibleProblems.find((p) => p.name === lastName) || null : null;
   engineRef.current = engine;
 
   const t = STRINGS[lang];
@@ -149,8 +159,10 @@ export default function App() {
     if (name) track("problem_selected", { problem: problemKey(name), area: areaOf(name), method: listMode ? "list" : "body" });
     const url = name ? `?problem=${encodeURIComponent(name)}` : window.location.pathname;
     window.history.pushState({}, "", url);
+    if (name) { try { localStorage.setItem("last-problem", name); } catch { /* ignore */ } }
     setSelected(name || null);
     setCamStage(false);
+    setShowProgress(false);
     window.scrollTo(0, 0);
   }
 
@@ -218,10 +230,29 @@ export default function App() {
       if (!engineRef.current) throw new Error("the app is still loading — try again in a moment");
       // Front ("user") or back ("environment") camera. "ideal" lets devices
       // with one camera (most laptops) still start instead of failing.
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: want }, width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
-      });
+      const size = { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } };
+      // Device check: phones/tablets (touch) have a back and a front camera, so ask for the one
+      // wanted — the back camera by default. Laptops and PCs usually have one webcam, so don't
+      // ask for a side at all.
+      const phoneLike = deviceType() === "touch";
+      let stream;
+      if (phoneLike) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: want }, ...size } });
+        } catch (e) {
+          if (e?.name === "NotAllowedError" || e?.name === "SecurityError") throw e;
+          // this phone has no such camera: take whatever it has
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: want }, ...size } });
+        }
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({ video: size });
+      }
       streamRef.current = stream;
+      // Labels/devices are only listed once the camera is allowed, so count them now.
+      navigator.mediaDevices.enumerateDevices?.().then((list) => {
+        const n = list.filter((x) => x.kind === "videoinput").length;
+        setCameraCount(n || 1);
+      }).catch(() => {});
       // Trust what the browser actually gave us; if it doesn't say, it's a
       // webcam/front camera. Only the front camera is shown mirrored. The
       // hand-side detection works on the raw frame, so it's the same for both.
@@ -243,7 +274,7 @@ export default function App() {
       foundRef.current = false;
       track("camera_started", { facing: want, problem: problemKey(problemRef.current?.name) });
       rafRef.current = requestAnimationFrame(detectionLoop);
-      if (want === "environment" && !isBack) {
+      if (phoneLike && want === "environment" && !isBack) {
         setCameraError("No back camera found on this device, so the front camera is being used.");
       }
     } catch (err) {
@@ -258,6 +289,14 @@ export default function App() {
       setStarting(false);
     }
   }
+
+  // Phones dim and lock the screen while you hold a hand up; keep it awake during the camera
+  const wakeRef = useRef(null);
+  useEffect(() => {
+    if (!running || !navigator.wakeLock) return undefined;
+    navigator.wakeLock.request("screen").then((l) => { wakeRef.current = l; }).catch(() => {});
+    return () => { wakeRef.current?.release?.().catch?.(() => {}); wakeRef.current = null; };
+  }, [running]);
 
   function stopCamera() {
     runningRef.current = false;
@@ -318,6 +357,8 @@ export default function App() {
     onVideoSize: (w, h) => setVideoAspect([w, h]),
     facing,
     mirrored,
+    // Switch button: phones/tablets with more than one camera only (PCs have no front/back).
+    canFlip: deviceType() === "touch" && cameraCount !== 1,
     chooseCamera,
     start: () => startCamera(facing),
     // One tap from the diagram: bring the camera into view and switch it on.
@@ -327,6 +368,7 @@ export default function App() {
       if (!running && !starting) startCamera(facing);
     },
     stop: stopCamera,
+    openCheckIn: () => { if (problemRef.current) setCheckInFor(problemRef.current.name); },
     goHome: () => { stopCamera(); chooseProblem(""); },
     savePhoto,
   };
@@ -348,6 +390,7 @@ export default function App() {
               onClick={() => { track("large_text_toggled", { on: large ? 0 : 1 }); setLarge((v) => !v); }} title={large ? t.normal : t.bigger} aria-label={large ? t.normal : t.bigger}>
               A<span>A</span>
             </button>
+            <button type="button" className="btn btn-ghost btn-sm top-progress" onClick={() => { track("progress_opened", { checkins: entries.length }); setShowProgress(true); window.scrollTo(0, 0); }}><IconChart size={18} /><span>{t.myProgress}</span></button>
             <a className="btn btn-primary btn-sm top-book" href={site.bookUrl} target="_blank" rel="noopener" onClick={() => track("book_click", { channel: "top_button" })}>{t.book}</a>
           </div>
         </div>
@@ -378,7 +421,22 @@ export default function App() {
         ) : (
           <div className="flow">
             <h1 className="sr-only">{t.heroTitle}</h1>
-            {!problem && (
+            {showProgress && (
+              <Progress entries={entries} t={t} titleOf={(n) => { const p = problems.find((x) => x.name === n); return p ? problemTitle(p, lang) : n.replace(/^Su Jok: /, ""); }}
+                onBack={() => chooseProblem("")} onAdd={(n) => setCheckInFor(n)}
+                onRemove={(id) => setEntries((l) => removeEntry(l, id))} onClear={() => setEntries(clearEntries())} />
+            )}
+            {!showProgress && !problem && entries.length > 0 && (
+              <button type="button" className="progress-chip" onClick={() => setShowProgress(true)}><IconChart size={20} />{t.myProgress}: {entries.length} {t.checkins}{streakDays(entries) > 1 ? ` · ${streakDays(entries)} ${t.streak}` : ""}</button>
+            )}
+            {!showProgress && !problem && lastProblem && (
+              <button type="button" className="continue-card" style={{ "--c": lastProblem.color }} onClick={() => { track("continue_tap", { problem: problemKey(lastProblem.name) }); chooseProblem(lastProblem.name); }}>
+                <span className="see-dot" aria-hidden="true" />
+                <span><small>{t.continueSub}</small><strong>{t.continueWith} {problemTitle(lastProblem, lang)}</strong></span>
+                <IconNext size={26} />
+              </button>
+            )}
+            {!showProgress && !problem && (
               <section className="pick" aria-label={t.s1Title}>
                 {listMode || webglFailed ? (
                   <ProblemCards problems={visibleProblems} loading={!problems.length} value={pending || ""}
@@ -412,11 +470,11 @@ export default function App() {
                 })()}
               </section>
             )}
-            {problem && (
+            {!showProgress && problem && (
               <SeeStage problem={problem} views={referenceViews} onTry={camera.tryNow}
                 onBack={() => chooseProblem("")} t={t} lang={lang} />
             )}
-            {!problem && <BookAppointment t={t} problem={null} lang={lang} />}
+            {!showProgress && !problem && <BookAppointment t={t} problem={null} lang={lang} />}
           </div>
         )}
       </main>
@@ -425,6 +483,15 @@ export default function App() {
       {!problem && <SiteFooter t={t} />}
       <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem}
         onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />
+      {checkInFor && (() => {
+        const p = problems.find((x) => x.name === checkInFor);
+        return (
+          <CheckIn t={t} title={p ? problemTitle(p, lang) : checkInFor}
+            onSave={(v) => { setEntries((l) => addEntry(l, { problem: checkInFor, ...v })); track("checkin_saved", { problem: problemKey(checkInFor) }); }}
+            onClose={() => setCheckInFor(null)}
+            onSeeProgress={() => { setCheckInFor(null); stopCamera(); setCamStage(false); setShowProgress(true); window.scrollTo(0, 0); }} />
+        );
+      })()}
       {photoSaved && (
         <div className="modal-back" role="dialog" aria-modal="true" aria-labelledby="saved-title">
           <div className="modal-card">

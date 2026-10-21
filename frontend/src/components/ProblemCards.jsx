@@ -3,15 +3,15 @@ import { problemTitle } from "../i18n";
 // Body areas, so the list scans like a menu. Problems not listed still show
 // up, under "Other". All groups are visible at once (no collapsing).
 const GROUPS = [
-  { id: "head", en: "Head & Neck", hi: "सिर और गर्दन", names: ["Su Jok: Headache", "Su Jok: Sore Throat", "Su Jok: Neck Pain"] },
+  { id: "head", en: "Head & Neck", hi: "सिर और गर्दन", names: ["Su Jok: Headache", "Su Jok: Sore Throat", "Su Jok: Neck Pain", "Su Jok: Cold / Blocked Nose / Sinus", "Su Jok: Dizziness", "Su Jok: Hoarse Voice / Voice Strain"] },
   {
     id: "chest", en: "Chest & Stomach", hi: "छाती और पेट",
     names: [
       "Su Jok: Cough / Bronchitis", "Su Jok: Palpitations", "Su Jok: Acidity / Indigestion",
-      "Su Jok: Constipation", "Su Jok: Menstrual / Bladder Discomfort",
+      "Su Jok: Constipation", "Su Jok: Menstrual / Bladder Discomfort", "Su Jok: Chest Congestion", "Su Jok: Breathing Discomfort", "Su Jok: Nausea", "Su Jok: Loss of Appetite", "Su Jok: Gas / Bloating", "Su Jok: Stomach Cramps", "Su Jok: Loose Motions", "Su Jok: Period Pain", "Su Jok: Urinary Discomfort",
     ],
   },
-  { id: "back", en: "Back", hi: "पीठ", names: ["Su Jok: Upper Back Pain", "Su Jok: Lower Back Pain"] },
+  { id: "back", en: "Back", hi: "पीठ", names: ["Su Jok: Upper Back Pain", "Su Jok: Lower Back Pain", "Su Jok: General Backache", "Su Jok: Sciatica-type Leg Pain"] },
   {
     id: "limbs", en: "Arms & Legs", hi: "हाथ और पैर",
     names: [

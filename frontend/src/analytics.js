@@ -72,6 +72,20 @@ const AREA = {
   "Su Jok: Upper Back Pain": "back", "Su Jok: Lower Back Pain": "back",
   "Su Jok: Shoulder Pain": "arms_legs", "Su Jok: Elbow Pain": "arms_legs", "Su Jok: Wrist Pain": "arms_legs",
   "Su Jok: Hip Pain": "arms_legs", "Su Jok: Knee Pain": "arms_legs", "Su Jok: Ankle Sprain": "arms_legs",
+  "Su Jok: Cold / Blocked Nose / Sinus": "head_neck",
+  "Su Jok: Dizziness": "head_neck",
+  "Su Jok: Hoarse Voice / Voice Strain": "head_neck",
+  "Su Jok: Chest Congestion": "chest_stomach",
+  "Su Jok: Breathing Discomfort": "chest_stomach",
+  "Su Jok: Nausea": "chest_stomach",
+  "Su Jok: Loss of Appetite": "chest_stomach",
+  "Su Jok: Gas / Bloating": "chest_stomach",
+  "Su Jok: Stomach Cramps": "chest_stomach",
+  "Su Jok: Loose Motions": "chest_stomach",
+  "Su Jok: Period Pain": "chest_stomach",
+  "Su Jok: Urinary Discomfort": "chest_stomach",
+  "Su Jok: General Backache": "back",
+  "Su Jok: Sciatica-type Leg Pain": "back",
 };
 
 // "Su Jok: Knee Pain" -> "knee_pain"
