@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchInfo } from "./api";
 import { buildState } from "./geometry";
-import { createHandTracker } from "./handTracking";
+import { createHandTracker, preloadHandTracker } from "./handTracking";
 import { drawOverlay } from "./overlay";
 import ProblemCards from "./components/ProblemCards";
 import { WhatsAppFloat, BookAppointment } from "./components/WhatsAppBook";
@@ -169,6 +169,15 @@ export default function App() {
     window.scrollTo(0, 0);
   }
 
+  // Step 2 is where people read before tapping the camera, so use that time to get the hand model
+  // ready. Skipped on Data Saver / 2G, where ~20 MB is not worth guessing at.
+  useEffect(() => {
+    if (!selected) return;
+    const c = navigator.connection;
+    if (c?.saveData || /(^|-)2g$/.test(c?.effectiveType || "")) return;
+    preloadHandTracker();
+  }, [selected]);
+
   // Leaving a problem (including via the back button) turns the camera off.
   useEffect(() => {
     if (!selected) { stopCamera(); setCamStage(false); }
@@ -238,6 +247,9 @@ export default function App() {
       // wanted — the back camera by default. Laptops and PCs usually have one webcam, so don't
       // ask for a side at all.
       const phoneLike = deviceType() === "touch";
+      // Load the hand model while the browser's camera prompt is open, not after it.
+      const trackerPromise = createHandTracker();
+      trackerPromise.catch(() => {});
       let stream;
       if (phoneLike) {
         try {
@@ -266,7 +278,7 @@ export default function App() {
       setFacing(isBack ? "environment" : "user");
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
-      trackerRef.current = await createHandTracker();
+      trackerRef.current = await trackerPromise;
 
       runningRef.current = true;
       lastVideoTimeRef.current = -1;

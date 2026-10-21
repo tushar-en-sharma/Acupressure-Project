@@ -91,6 +91,14 @@ if FRONTEND_DIST.is_dir():
     WHITENOISE_INDEX_FILE = True
     WHITENOISE_IMMUTABLE_FILE_TEST = lambda path, url: url.startswith("/assets/")
 
+    # The hand model and MediaPipe runtime (~20 MB) never change between releases, so let
+    # browsers keep them for 30 days instead of re-checking every minute.
+    def _long_cache_models(headers, path, url):
+        if url.startswith("/mediapipe/"):
+            headers["Cache-Control"] = "public, max-age=2592000"
+
+    WHITENOISE_ADD_HEADERS_FUNCTION = _long_cache_models
+
 # Behind the Caddy reverse proxy on the server (see deploy/remote-deploy.sh),
 # which terminates HTTPS and forwards X-Forwarded-Proto.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

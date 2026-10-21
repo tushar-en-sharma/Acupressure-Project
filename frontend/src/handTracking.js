@@ -106,16 +106,33 @@ function createLandmarker(vision, delegate) {
   });
 }
 
+// The first detection on a new landmarker compiles GPU shaders (a visible stall), so run one on a
+// blank frame while nothing is on screen. Timestamp 1 keeps real frames (performance.now()) later.
+function warmUp(landmarker) {
+  try {
+    const c = document.createElement("canvas");
+    c.width = 256; c.height = 192;
+    landmarker.detectForVideo(c, 1);
+  } catch { /* the first real frame just pays the cost instead */ }
+  return landmarker;
+}
+
 function loadLandmarker() {
   if (!landmarkerPromise) {
     // GPU is much faster, but isn't available in every mobile browser —
     // fall back to CPU instead of failing to start.
     landmarkerPromise = FilesetResolver.forVisionTasks(WASM_BASE).then((vision) =>
       createLandmarker(vision, "GPU").catch(() => createLandmarker(vision, "CPU"))
-    );
+    ).then(warmUp);
     landmarkerPromise.catch(() => { landmarkerPromise = null; });
   }
   return landmarkerPromise;
+}
+
+/** Starts downloading and preparing the hand model in the background so it is ready when the camera
+ * opens. Safe to call many times; failures are ignored (the camera start retries and reports them). */
+export function preloadHandTracker() {
+  loadLandmarker().catch(() => {});
 }
 
 /** One HandLandmarker instance shared across start/stop cycles — loading the
