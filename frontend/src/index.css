@@ -638,3 +638,8 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* "Track" sits bottom right, level with the shutter, in easy reach of the thumb */
 .cam-track { position: absolute; right: 14px; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 40px); z-index: 2; }
+
+/* Tiny reassurance under Take photo */
+.live-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 6px; max-width: calc(100vw - 28px); color: #fff; font-size: 11px; line-height: 1.3; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.live-note .live-dot { width: 7px; height: 7px; }
+.live-note .live-info { font-size: 11px; min-height: 28px; padding: 4px 2px; }

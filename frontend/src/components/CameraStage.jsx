@@ -66,14 +66,6 @@ export default function CameraStage({ camera, problem, engine, active, onBack, o
         </div>
       </div>
 
-      {running && (
-        <div className="live-pill glass" role="status">
-          <span className="live-dot" aria-hidden="true" />
-          <span>{t.camLive}</span>
-          <button type="button" className="live-info" onClick={onPrivacy}>{t.ppDetails}</button>
-        </div>
-      )}
-
       {running && state === "none" && (
         <div className="guide guide-none" aria-label={t.noHand} role="status">
           <HandGuide face={want} />
@@ -121,6 +113,11 @@ export default function CameraStage({ camera, problem, engine, active, onBack, o
           <button type="button" className="cam-btn stop-cam" onClick={onBack}><IconStop size={20} /><span>{t.camStop}</span></button>
           <button type="button" className="shutter" onClick={camera.savePhoto} aria-label={t.takePhoto}><span /></button>
           <span className="shutter-label">{t.takePhoto}</span>
+          <div className="live-note" role="status">
+            <span className="live-dot" aria-hidden="true" />
+            <span>{t.camLive}</span>
+            <button type="button" className="live-info" onClick={onPrivacy}>{t.ppDetails}</button>
+          </div>
         </div>
       )}
     </section>
