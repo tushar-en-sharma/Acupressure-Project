@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import HandDiagram from "./HandDiagram";
 import { downloadDiagram } from "../downloadDiagram";
 import { pointName } from "../pointName";
@@ -109,7 +110,7 @@ export default function SeeStage({ problem, views, onTry, onBack, onPrivacy, t, 
         <li><IconClock size={30} /><strong>1–2</strong></li>
         <li><IconRepeat size={26} /><strong>2–3×</strong></li>
       </ul>
-      {pop && <PrivacyPopup t={t} onOpen={acceptCamera} onSkip={skipCamera} onClose={() => setPop(false)} onDetails={() => { setPop(false); onPrivacy(); }} />}
+      {pop && createPortal(<PrivacyPopup t={t} onOpen={acceptCamera} onSkip={skipCamera} onClose={() => setPop(false)} onDetails={() => { setPop(false); onPrivacy(); }} />, document.body)}
       <p className="sr-only">{t.how2} {t.how3} {options(problem)}</p>
     </section>
   );
