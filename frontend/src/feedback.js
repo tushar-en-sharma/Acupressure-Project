@@ -6,7 +6,7 @@ import { FEEDBACK_ENDPOINT, anonId, deviceType } from "./analytics";
 const LAST_KEY = "revive-app-feedback-at";
 const SESSION_KEY = "revive-app-feedback-session";
 const COOLDOWN_MS = 14 * 864e5;
-const MIN_SECONDS = 12;
+const MIN_SECONDS = 6;
 
 export function shouldAskFeedback({ found, seconds }) {
   try {
