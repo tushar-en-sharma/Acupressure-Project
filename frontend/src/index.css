@@ -636,8 +636,11 @@ h1, h2, h3 { text-wrap: balance; }
 .foot-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .pp-back, .pp-card, .live-dot { animation: none; } }
 
-/* "Track" sits bottom right, level with the shutter, in easy reach of the thumb */
-.cam-track { position: absolute; right: 14px; bottom: calc(max(24px, env(safe-area-inset-bottom)) + 40px); z-index: 2; }
+/* "Track" sits on the right edge, vertically centred, in easy reach of the thumb.
+   z-index 3 and a click-through bottom bar: the full-width .cam-bottom used to cover it and swallow taps. */
+.cam-track { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); z-index: 3; }
+.cam-bottom { pointer-events: none; }
+.cam-bottom > * { pointer-events: auto; }
 
 /* Tiny reassurance under Take photo */
 .live-note { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 6px; max-width: calc(100vw - 28px); color: #fff; font-size: 11px; line-height: 1.3; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
@@ -646,3 +649,15 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* Smaller trust line, tucked close to the picture */
 .trust-line { font-size: 12px; margin: -4px 0 -12px; }
+
+/* Optional rating prompt after the camera */
+.fb-card { gap: 8px; max-height: 92vh; overflow-y: auto; }
+.fb-stars { display: flex; justify-content: center; gap: 2px; margin: 4px 0 0; }
+.fb-stars button { min-width: 48px; min-height: 48px; display: grid; place-items: center; border: 0; background: none; padding: 0; color: #CDBF9E; cursor: pointer; transition: transform 0.15s, color 0.15s; }
+.fb-stars button.on { color: var(--gold); }
+.fb-stars button:hover { transform: scale(1.12); }
+.fb-word { min-height: 1.4em; font-weight: 700; color: var(--heading); }
+.fb-note { display: flex; flex-direction: column; gap: 6px; text-align: left; font-size: 14px; font-weight: 600; }
+.fb-note textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 12px; font: inherit; font-weight: 400; resize: vertical; }
+.fb-priv { font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .fb-stars button { transition: none; } .fb-stars button:hover { transform: none; } }

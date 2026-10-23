@@ -18,6 +18,8 @@ import Progress from "./components/Progress";
 import CheckIn from "./components/CheckIn";
 import { loadEntries, addEntry, removeEntry, clearEntries, streakDays } from "./progress";
 import ConsentBar from "./components/ConsentBar";
+import FeedbackPrompt from "./components/FeedbackPrompt";
+import { shouldAskFeedback, markFeedbackAsked, markFeedbackDone } from "./feedback";
 
 // Which point systems the app offers. Classical acupressure is hidden for
 // now — add "hand_acupoint" / "hand_reflex" back here to show it again.
@@ -69,6 +71,8 @@ export default function App() {
   const [entries, setEntries] = useState(loadEntries);
   const [showProgress, setShowProgress] = useState(false);
   const [checkInFor, setCheckInFor] = useState(null);
+  // Optional rating prompt after the camera: { problem, found } while it is open
+  const [feedbackFor, setFeedbackFor] = useState(null);
   const [cameraCount, setCameraCount] = useState(null);
   const [lastName] = useState(() => { try { return localStorage.getItem("last-problem"); } catch { return null; } });
   // Which camera the user asked for, and whether the live feed is shown as a
@@ -497,7 +501,13 @@ export default function App() {
       {consent === null && <ConsentBar t={t} onChoose={chooseConsent} />}
       {!problem && <SiteFooter t={t} onPrivacy={openPrivacy} />}
       <CameraStage camera={camera} problem={problem} engine={engine} active={camStage && !!problem} onPrivacy={openPrivacy}
-        onBack={() => { track("camera_closed", { problem: problemKey(problem?.name), found: foundRef.current ? 1 : 0, seconds: Math.round((performance.now() - camT0Ref.current) / 1000) }); stopCamera(); setCamStage(false); }} t={t} />
+        onBack={() => { const seconds = Math.round((performance.now() - camT0Ref.current) / 1000), found = !!foundRef.current; track("camera_closed", { problem: problemKey(problem?.name), found: found ? 1 : 0, seconds }); if (shouldAskFeedback({ found, seconds })) { markFeedbackAsked(); const pk = problemKey(problem?.name); setTimeout(() => { track("feedback_shown", { problem: pk }); setFeedbackFor({ problem: pk, found }); }, 700); } stopCamera(); setCamStage(false); }} t={t} />
+      {feedbackFor && (
+        <FeedbackPrompt t={t} lang={lang} problem={feedbackFor.problem} found={feedbackFor.found}
+          onSent={(rating, hasComment) => { markFeedbackDone(); track("feedback_sent", { rating, comment: hasComment ? 1 : 0 }); }}
+          onSkip={() => { markFeedbackDone(); track("feedback_skipped", { problem: feedbackFor.problem }); setFeedbackFor(null); }}
+          onClose={() => setFeedbackFor(null)} />
+      )}
       {showPrivacy && <PrivacyInfo t={t} onClose={() => setShowPrivacy(false)} />}
       {checkInFor && (() => {
         const p = problems.find((x) => x.name === checkInFor);

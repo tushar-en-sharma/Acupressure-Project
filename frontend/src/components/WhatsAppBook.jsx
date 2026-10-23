@@ -39,7 +39,7 @@ export function BookAppointment({ t, problem, lang }) {
           {Glyph}{t.waBook}
         </a>
         <a className="btn btn-ghost btn-lg" href={`tel:${site.phoneTel}`} onClick={() => track("book_click", { channel: "call" })}>
-          {t.call} {site.phoneDisplay}
+          {t.call}
         </a>
         <a className="btn btn-ghost" href={site.bookUrl} target="_blank" rel="noopener" onClick={() => track("book_click", { channel: "website" })}>{t.bookOnline}</a>
       </div>

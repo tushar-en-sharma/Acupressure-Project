@@ -8,6 +8,11 @@ const CONSENT_KEY = "revive-app-consent";
 const GA_ID = "G-T5C2EK35HL";
 const ENDPOINT = import.meta.env.VITE_STATS_URL ?? (import.meta.env.DEV ? "http://localhost:3001/api/app-events" : `${site.siteUrl}/api/app-events`);
 
+// Where the optional star rating goes (same server as the usage events).
+export const FEEDBACK_ENDPOINT = ENDPOINT.replace(/app-events$/, "app-feedback");
+// The anonymous id is shared with feedback only if the user allowed statistics.
+export const anonId = () => (hasConsent() ? stored(localStorage, "revive-app-vid") : "");
+
 export const getConsent = () => { try { return localStorage.getItem(CONSENT_KEY); } catch { return null; } };
 export const hasConsent = () => getConsent() === "yes";
 
